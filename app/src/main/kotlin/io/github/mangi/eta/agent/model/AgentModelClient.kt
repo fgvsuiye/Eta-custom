@@ -1,5 +1,7 @@
 package io.github.mangi.eta.agent.model
 
+import io.github.mangi.eta.agent.prompt.AgentToolPolicyStore
+import io.github.mangi.eta.agent.prompt.PromptCustomizationStore
 import io.github.mangi.eta.agent.runtime.AgentEvent
 import io.github.mangi.eta.agent.runtime.AgentRunController
 import io.github.mangi.eta.agent.memory.AgentMemoryContext
@@ -116,6 +118,11 @@ internal object AgentModelClient {
         onEvent: (AgentEvent) -> Unit = {}
     ): ModelResponse.Text {
         config.validate()
+        // 自定义提示词与工具白名单是正式配置：每次 run 开始读一次，避免轮内改动让前缀反复失效。
+        val customization = PromptCustomizationStore.load()
+        val toolPolicy = AgentToolPolicyStore.load()
+        // 上下文超限时自动降一档：只影响本次运行，不写用户设置。
+        var activeProfileOverride: LocalToolProfile? = null
         val initialCapabilities = capabilitiesProvider()
         val messages = AgentPromptBuilder.buildInitialMessages(
             config,
@@ -127,6 +134,9 @@ internal object AgentModelClient {
             rootAvailable = initialCapabilities.rootAvailable,
             roleplayContext = roleplayContext,
             executionContext = executionContext,
+            virtualScreenEnabled = initialCapabilities.virtualScreenEnabled,
+            virtualScreenFallbackEnabled = initialCapabilities.virtualScreenFallbackEnabled,
+            customization = customization,
         )
         if (rewriteReply) {
             messages.put(messages.length() - 1, AgentConversationCodec.userTextMessage(
@@ -145,28 +155,32 @@ internal object AgentModelClient {
         val transcript = JSONArray()
         // 旧 history 中的无效消息可能在组装时被跳过，系统边界不能由 history 条数倒推。
         val systemCount = AgentPromptBuilder.buildSystemMessages(
-            config, skillContext, memoryContext, initialCapabilities.rootAvailable, roleplayContext, executionContext,
+            config, skillContext, memoryContext, initialCapabilities.rootAvailable, roleplayContext, executionContext, initialCapabilities.virtualScreenEnabled, initialCapabilities.virtualScreenFallbackEnabled, customization,
         ).length()
-        fun toolsFor(capabilities: AgentToolCapabilities): JSONArray {
-            if (rewriteReply) return JSONArray()
-            val tools = AgentToolCatalog.build(
-                terminalTools = config.terminalTools,
-                browserTools = config.browserTools,
-                deviceDirectTools = config.deviceDirectTools,
-                deviceSensitiveReadTools = config.deviceSensitiveReadTools,
-                deviceSensitiveActionTools = config.deviceSensitiveActionTools,
-                skillGitHubDiscovery = true,
-                skillGitHubInstall = true,
-                memoryTools = memoryContext.enabled,
-                memoryWritable = roleplayContext == null,
-                capabilities = capabilities,
-                localWebSearch = !config.usesHostedWebSearch,
-            )
-            for (index in 0 until additionalTools.length()) {
-                tools.put(additionalTools.opt(index))
-            }
-            return toolFilter?.invoke(tools) ?: tools
+        // MCP 工具只在 run 开始时压一次：每轮重复解析这 190KB JSON 纯属浪费。
+        val compactedAdditionalTools = if (additionalTools.length() == 0) {
+            additionalTools
+        } else {
+            JSONArray(additionalTools.toString()).also { AgentToolSchemaCompactor.compactMcp(it) }
         }
+        fun toolsFor(capabilities: AgentToolCapabilities): JSONArray = AgentToolDirectory.build(
+            terminalTools = config.terminalTools,
+            browserTools = config.browserTools,
+            deviceDirectTools = config.deviceDirectTools,
+            deviceSensitiveReadTools = config.deviceSensitiveReadTools,
+            deviceSensitiveActionTools = config.deviceSensitiveActionTools,
+            skillGitHubDiscovery = true,
+            skillGitHubInstall = true,
+            memoryTools = memoryContext.enabled,
+            memoryWritable = roleplayContext == null,
+            capabilities = capabilities,
+            localWebSearch = !config.usesHostedWebSearch,
+            localProfile = activeProfileOverride ?: LocalToolProfileStore.current(config.providerId, config.model),
+            policy = toolPolicy,
+            additionalTools = compactedAdditionalTools,
+            restrictedToolNames = restrictedToolNames,
+            rewriteReply = rewriteReply,
+        )
         val tools = toolsFor(initialCapabilities)
         onEvent(
             AgentEvent.RunStarted(
@@ -184,7 +198,7 @@ internal object AgentModelClient {
             val capabilities = capabilitiesProvider()
             if (capabilities.rootAvailable != promptRootAvailable) {
                 val systemMessages = AgentPromptBuilder.buildSystemMessages(
-                    config, skillContext, memoryContext, capabilities.rootAvailable, roleplayContext, executionContext,
+                    config, skillContext, memoryContext, capabilities.rootAvailable, roleplayContext, executionContext, capabilities.virtualScreenEnabled, capabilities.virtualScreenFallbackEnabled, customization,
                 )
                 for (index in 0 until systemMessages.length()) {
                     messages.put(index, systemMessages.getJSONObject(index))
@@ -213,13 +227,13 @@ internal object AgentModelClient {
             messages = messages,
             tools = tools,
             provider = provider,
-            // 目录在运行内只增不减，可见不再等于可用：执行前用同一规则复核，
-            // 中途失去的能力返回与目录过滤一致的错误码，而不是让底层接口给出含糊的失败。
-            toolExecutor = AgentModelClient.ToolExecutor { call ->
-                val unavailable = AgentToolRequirements.find(call.name)
-                    ?.let { capabilitiesProvider().unavailableCode(call.name) }
-                if (unavailable == null) {
-                    toolExecutor.execute(call)
+            toolExecutor = ToolExecutor { call ->
+                if (!toolPolicy.allows(call.name)) {
+                    ToolResult(JSONObject().put("ok", false).put("code", "TOOL_NOT_ALLOWED_BY_POLICY")
+                        .put("message", "该工具不在本次工具白名单中，未执行").toString())
+                } else if (restrictedToolNames != null && call.name !in restrictedToolNames) {
+                    ToolResult(JSONObject().put("ok", false).put("code", "REVIEW_TOOL_DENIED")
+                        .put("message", "此工具不属于自动复盘能力").toString())
                 } else {
                     ToolResult(
                         JSONObject().put("ok", false).put("code", unavailable)

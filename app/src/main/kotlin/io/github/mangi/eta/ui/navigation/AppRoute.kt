@@ -71,6 +71,57 @@ sealed interface AppRoute : NavKey {
 
     @Serializable
     data object Memory : AppRoute
+    @Serializable
+
+    @Serializable
+
+    @Serializable
+
+    @Serializable
+
+    @Serializable
+
+    @Serializable
+
+    @Serializable
+    data object PromptStudio : AppRoute
+
+    @Serializable
+    data object PromptEditor : AppRoute
+
+    @Serializable
+    data object PromptVersions : AppRoute
+
+    @Serializable
+    data object PromptTools : AppRoute
+
+    @Serializable
+    data object PromptPresets : AppRoute
+
+    @Serializable
+    data object PromptSnapshots : AppRoute
+
+    @Serializable
+    data class PromptSnapshotDetail(val fileName: String) : AppRoute
+
+    @Serializable
+    data class PromptPresetEditor(val name: String? = null) : AppRoute
+
+    @Serializable
+    data object PromptIntegrity : AppRoute
+
+    @Serializable
+    data object PromptEffective : AppRoute
+
+    /** segment = -1 表示工具清单，>=0 表示第 N 段 system 消息。 */
+    @Serializable
+    data class PromptEffectiveItem(val segment: Int) : AppRoute
+
+    @Serializable
+    data object PromptToolGroups : AppRoute
+
+    @Serializable
+    @Serializable
 
     @Serializable
     data object LinuxEnvironment : AppRoute
