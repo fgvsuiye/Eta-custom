@@ -1,0 +1,66 @@
+name: sync-upstream
+
+# 定时同步上游 Mangi-11/Eta 最新 main 到本仓库，自动合并并推送。
+# 定制提交（提示词与工具边界）始终留在 main 顶部，以 cherry-pick -x 记录来源。
+# 无冲突自动合并；有冲突自动开 issue 通知人工介入，不强制。
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # 每日 UTC 03:00
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 配置远端
+        run: |
+          git remote add upstream https://github.com/Mangi-11/Eta.git
+          git fetch upstream main
+          git config user.name "auto-sync"
+          git config user.email "sync@eta-custom.local"
+
+      - name: 检查上游是否有新提交
+        id: check
+        run: |
+          if git merge-base --is-ancestor upstream/main HEAD; then
+            echo "upstream_ahead=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "upstream_ahead=true" >> "$GITHUB_OUTPUT"
+
+      - name: 合并上游
+        id: merge
+        if: steps.check.outputs.upstream_ahead == 'true'
+        run: |
+          git merge --no-ff upstream/main || {
+            git merge --abort
+            exit 1
+          }
+
+      - name: 推送合并结果
+        if: steps.check.outputs.upstream_ahead == 'true' && steps.merge.outcome == 'success'
+        run: git push origin HEAD:refs/heads/main
+
+      - name: 冲突时开 issue 通知
+        if: steps.check.outputs.upstream_ahead == 'true' && steps.merge.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '[sync] 上游合并冲突待处理';
+            const body = '自动同步 `Mangi-11/Eta` 时发生冲突，需要人工处理。\n\n' +
+              '- 处理方式：本地执行 `git fetch upstream && git merge upstream/main`，' +
+              '解决冲突后保留顶部定制提交（提示词与工具边界），' +
+              '再 `git push origin HEAD:refs/heads/main`。\n\n' +
+              '关闭本 issue 表示处理完成。';
+            const existing = await github.rest.issues.list({ owner: context.repo.owner, repo: context.repo.repo, labels: ['sync-conflict'], state: 'open' });
+            if (existing.data.length === 0) {
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['sync-conflict'] });
+            }

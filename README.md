@@ -226,3 +226,14 @@ AI 时代下，处理外部 PR 变得比以往更加困难：大量由 AI 生成
 Eta 采用 [PolyForm Noncommercial License 1.0.0](LICENSE)，未经[作者](https://github.com/Mangi-11)书面授权，禁止个人二次分发、贩卖、收费代装及其他商业使用。
 
 <sub></sub>社区：<a href="https://linux.do">LINUX DO</sub>
+
+---
+
+## 本仓库定制说明（本仓库非上游官方版）
+
+- 基座：`Mangi-11/Eta` 上游 `main`，保持与上游同步（见 `.github/workflows/sync-upstream.yml`，每日定时合并上游，冲突自动开 issue）。
+- 定制内容：**仅**在顶部保留一个移植自 `Oo0520/Eta-por` 的「提示词与工具边界」提交（`git log` 中含 `cherry-picked from` 标记），包含：
+  - 提示词工作台：自定义 system 提示词 / 人格 / 追加指令、版本历史、预设导入导出、请求快照、完整性自检
+  - 工具边界：工具目录统一构建（请求侧与「当前生效提示词」共用同一目录）、按白名单过滤、纯聊天档
+  - 设置入口：设置页 → 提示词工作台
+- 其余功能全部与上游一致，上游更新自动跟随。
