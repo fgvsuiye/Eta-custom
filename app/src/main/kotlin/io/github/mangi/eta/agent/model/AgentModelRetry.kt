@@ -19,12 +19,9 @@ internal class AgentModelRetry(
         onEvent: (AgentEvent) -> Unit,
         onProviderEvent: (Int, ProviderEvent) -> Unit,
         discardAttemptReasoning: () -> Unit,
-        /** 上下文超限时换取「更精简工具档」的新请求；返回 null 表示不再降档。 */
-        downgradeRequest: (Int) -> ProviderRequest? = { null },
     ): Result {
         var round = initialRound
         var retries = 0
-        var overflowRetries = 0
         var currentRequest = request
         // 一次 complete 只抓一份快照：重试与降档复用同一次调用的进程内证据。
         var snapshotTaken = false
@@ -55,21 +52,6 @@ internal class AgentModelRetry(
                 if (hostedToolStarted) throw AgentModelFailure(
                     classified.code, false, classified.message.orEmpty(), classified,
                 )
-                if (classified.code == "CONTEXT_OVERFLOW") {
-                    val downgraded = downgradeRequest(overflowRetries)
-                    if (downgraded != null) {
-                        overflowRetries += 1
-                        discardAttemptReasoning()
-                        round += 1
-                        currentRequest = downgraded
-                        continue
-                    }
-                    if (overflowRetries > 0) throw AgentModelFailure(
-                        classified.code, false,
-                        "${classified.message}（已自动降低工具档仍超限，建议新开会话。）",
-                        classified,
-                    )
-                }
                 if (!classified.retryable) throw classified
                 if (retries == MAX_RETRIES) {
                     throw AgentModelFailure(

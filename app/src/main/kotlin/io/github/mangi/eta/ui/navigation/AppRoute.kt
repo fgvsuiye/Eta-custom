@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import io.github.mangi.eta.agent.browser.BrowserSessionRegistry
 import top.yukonga.miuix.kmp.nav.core.NavKey
 
+@Serializable
 sealed interface AppRoute : NavKey {
     @Serializable
     data object Home : AppRoute
@@ -70,11 +71,6 @@ sealed interface AppRoute : NavKey {
 
     @Serializable
     data object Memory : AppRoute
-
-
-
-
-
 
     @Serializable
     data object PromptStudio : AppRoute
@@ -148,4 +144,5 @@ sealed interface AppRoute : NavKey {
     data class ModelProviderNew(val providerType: NewProviderType) : AppRoute
 }
 
+@Serializable
 enum class NewProviderType { OpenAiCompatible, Anthropic, Gemini }

@@ -707,11 +707,6 @@ internal object AgentRuntimeWire {
                 putInt("message_count", event.messageCount)
             }
 
-            is AgentEvent.ContextOverflowDowngrade -> {
-                putString(KEY_TYPE, "context_overflow_downgrade")
-                putString("profile_id", event.profileId)
-            }
-
             is AgentEvent.ContextCompaction -> {
                 putString(KEY_TYPE, "context_compaction")
                 putString("operation_id", event.operationId)
@@ -868,10 +863,6 @@ internal object AgentRuntimeWire {
     fun eventFromBundle(bundle: Bundle): AgentEvent? = when (bundle.getString(KEY_TYPE)) {
         "gui_control_changed" -> GuiControlStatus.fromWireValue(bundle.getString("status").orEmpty())
             ?.let { AgentEvent.GuiControlChanged(it) }
-        "context_overflow_downgrade" -> AgentEvent.ContextOverflowDowngrade(
-            profileId = bundle.getString("profile_id").orEmpty(),
-        )
-
         "run_started" -> AgentEvent.RunStarted(
             initialImages = bundle.getInt("initial_images"),
             initialImageBytes = bundle.getInt("initial_image_bytes"),

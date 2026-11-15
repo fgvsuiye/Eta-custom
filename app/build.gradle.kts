@@ -116,6 +116,10 @@ android {
         checkReleaseBuilds = false
         // versionCode 采用日期编码，已发布值只能递增；上限 2100000000 足够覆盖到 2099 年。
         disable += "HighAppVersionCode"
+        // 移植自 Eta-por 的提示词工作台是中文单语文案，上游其余语言目录无对应条目；
+        // 以及 por 代码沿用 LocalContext.current 读取资源，上游新 AGP 才引入该检查。
+        disable += "MissingTranslation"
+        disable += "LocalContextGetResourceValueCall"
     }
 
     testOptions {
