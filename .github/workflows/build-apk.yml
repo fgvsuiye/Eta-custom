@@ -41,7 +41,7 @@ jobs:
       - name: 整理产物
         id: apk
         run: |
-          apk=$(ls app/build/outputs/apk/release/*-release*.apk | head -1)
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
           version=$(basename "$apk" .apk)
           cp "$apk" "Eta-custom-${GITHUB_REF_NAME:-manual}-${version}.apk"
           echo "apk_path=$(ls Eta-custom-*.apk)" >> "$GITHUB_OUTPUT"
