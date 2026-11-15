@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="conversation_stop_and_delete">Stop task and delete</string>
     <string name="conversation_stop_and_delete_message">The task in this conversation will stop first. The conversation will be deleted after its results are saved.</string>
     <string name="conversation_delete_save_failed">Could not save or confirm the task results. The conversation has not been deleted.</string>
