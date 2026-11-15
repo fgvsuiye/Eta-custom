@@ -1,0 +1,61 @@
+name: Build APK
+
+# 出包流水线：手动触发或推送 v* 标签时触发。
+# 无 tag 触发时只上传 artifact；有 tag 时创建 GitHub Release 并附上 APK。
+# 签名使用仓库内 signing/eta-custom.jks（自用定制版固定签名，每次构建一致，可覆盖安装）。
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置构建环境
+        uses: ./.github/actions/setup-build
+
+      - name: 构建 Release APK
+        env:
+          ETA_RELEASE_STORE_FILE: ${{ github.workspace }}/signing/eta-custom.jks
+          ETA_RELEASE_STORE_PASSWORD: etacustom2026
+          ETA_RELEASE_KEY_ALIAS: etacustom
+          ETA_RELEASE_KEY_PASSWORD: etacustom2026
+        run: |
+          metadata_arg=()
+          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
+            metadata_arg=("-Peta.buildMetadata=${GITHUB_SHA::7}")
+          fi
+          ./gradlew --no-daemon --no-configuration-cache "${metadata_arg[@]}" \
+            :app:assembleRelease
+
+      - name: 整理产物
+        id: apk
+        run: |
+          apk=$(ls app/build/outputs/apk/release/*-release*.apk | head -1)
+          version=$(basename "$apk" .apk)
+          cp "$apk" "Eta-custom-${GITHUB_REF_NAME:-manual}-${version}.apk"
+          echo "apk_path=$(ls Eta-custom-*.apk)" >> "$GITHUB_OUTPUT"
+          echo "apk_name=$(ls Eta-custom-*.apk)" >> "$GITHUB_OUTPUT"
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: Eta-custom-APK
+          path: ${{ steps.apk.outputs.apk_path }}
+
+      - name: 创建 Release（仅 tag 触发）
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: ${{ steps.apk.outputs.apk_path }}
