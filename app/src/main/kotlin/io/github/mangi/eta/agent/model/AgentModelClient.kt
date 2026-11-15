@@ -234,10 +234,16 @@ internal object AgentModelClient {
                     ToolResult(JSONObject().put("ok", false).put("code", "REVIEW_TOOL_DENIED")
                         .put("message", "此工具不属于自动复盘能力").toString())
                 } else {
-                    ToolResult(
-                        JSONObject().put("ok", false).put("code", unavailable)
-                            .put("message", "该工具当前不可用（$unavailable），本次未执行").toString(),
-                    )
+                    val unavailable = AgentToolRequirements.find(call.name)
+                        ?.let { capabilitiesProvider().unavailableCode(call.name) }
+                    if (unavailable == null) {
+                        toolExecutor.execute(call)
+                    } else {
+                        ToolResult(
+                            JSONObject().put("ok", false).put("code", unavailable)
+                                .put("message", "该工具当前不可用（$unavailable），本次未执行").toString(),
+                        )
+                    }
                 }
             },
             runController = runController,

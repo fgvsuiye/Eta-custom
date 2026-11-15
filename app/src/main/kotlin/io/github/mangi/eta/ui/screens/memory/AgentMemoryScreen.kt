@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -43,7 +42,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
@@ -85,7 +83,6 @@ private enum class MemoryViewMode { Preview, Edit }
 internal fun AgentMemoryScreen(
     state: AgentMemoryUiState,
     onAction: (AgentMemoryAction) -> Unit,
-    onOpenDocument: () -> Unit = {},
 ) {
     var showClearDialog by remember { mutableStateOf(false) }
     var mode by rememberSaveable { mutableStateOf<MemoryViewMode?>(null) }
@@ -128,33 +125,13 @@ internal fun AgentMemoryScreen(
                 .imePadding()
                 .navigationBarsPadding(),
         ) {
-            // 设置与文档拆成两页：同一页里“设置区 + 文档”会把文档压成一条缝，
-            // 正文被裁一截，看起来像被遮挡（2026-10-26 反馈）。
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            // 键盘弹出时收起设置区，把有限高度全部让给正在编辑的文档。
+            AnimatedVisibility(
+                visible = !imeVisible,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
                 MemorySettingsGroup(state = state, onAction = onAction)
-                Spacer(Modifier.height(8.dp))
-                EtaPreferenceGroup(
-                    modifier = Modifier.padding(horizontal = EtaPreferenceDefaults.SidePadding),
-                ) {
-                    EtaArrowPreference(
-                        title = "MEMORY.md",
-                        summary = stringResource(
-                            R.string.memory_document_row_summary,
-                            formatBytes(state.draftBytes),
-                            formatBytes(state.maxBytes),
-                        ),
-                        startAction = {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Notes,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = MiuixTheme.colorScheme.primary,
-                            )
-                        },
-                        onClick = onOpenDocument,
-                    )
-                }
-                Spacer(Modifier.height(24.dp))
             }
             MemoryDocumentCard(
                 state = state,
@@ -170,7 +147,8 @@ internal fun AgentMemoryScreen(
                 onDiscard = { onAction(AgentMemoryAction.DraftChanged(state.savedContent)) },
                 onSave = { onAction(AgentMemoryAction.Save) },
             )
-            Spacer(Modifier.height(12.dp))        }
+            Spacer(Modifier.height(12.dp))
+        }
     }
 
     if (showClearDialog) {
@@ -219,7 +197,8 @@ private fun MemorySettingsGroup(
             .padding(horizontal = 12.dp)
             .padding(top = 8.dp, bottom = 12.dp),
     ) {
-        SwitchPreference(            title = stringResource(R.string.ui_enable_memory_4b69b7),
+        SwitchPreference(
+            title = stringResource(R.string.ui_enable_memory_4b69b7),
             summary = stringResource(R.string.ui_after_closing_no_memory_will_be_injected_and_the_mod_db3d23),
             checked = state.enabled,
             enabled = !state.isLoading,
@@ -301,57 +280,6 @@ private fun MemoryDocumentCard(
     }
 }
 
-/**
- * MEMORY.md 独立页：整页高度都给文档，预览/编辑切换与保存栏沿用原组件。
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-internal fun MemoryDocumentScreen(
-    state: AgentMemoryUiState,
-    onAction: (AgentMemoryAction) -> Unit,
-    onBack: () -> Unit,
-) {
-    var mode by rememberSaveable { mutableStateOf<MemoryViewMode?>(null) }
-    LaunchedEffect(state.isLoading) {
-        if (mode == null && !state.isLoading) {
-            mode = if (state.savedContent.isBlank()) MemoryViewMode.Edit else MemoryViewMode.Preview
-        }
-    }
-    val currentMode = mode ?: MemoryViewMode.Preview
-
-    MiuixScaffold(
-        title = "MEMORY.md",
-        onBack = onBack,
-    ) { paddingValues, scrollBehavior, sidePadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .horizontalCutoutPadding()
-                .padding(top = paddingValues.calculateTopPadding())
-                .padding(horizontal = sidePadding)
-                .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .imePadding()
-                .navigationBarsPadding(),
-        ) {
-            MemoryDocumentCard(
-                state = state,
-                mode = currentMode,
-                onModeChange = { mode = it },
-                onDraftChange = { onAction(AgentMemoryAction.DraftChanged(it)) },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = EtaPreferenceDefaults.SidePadding),
-            )
-            MemorySaveBar(
-                state = state,
-                onDiscard = { onAction(AgentMemoryAction.DraftChanged(state.savedContent)) },
-                onSave = { onAction(AgentMemoryAction.Save) },
-            )
-            Spacer(Modifier.height(12.dp))
-        }
-    }
-}
-
 @Composable
 private fun MemoryPreview(content: String, onStartEditing: () -> Unit) {
     if (content.isBlank()) {
@@ -381,9 +309,8 @@ private fun MemoryPreview(content: String, onStartEditing: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clipToBounds()
             .verticalScroll(rememberScrollState())
-            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 28.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         StaticMarkdown(content = content, tone = MarkdownTone.Answer, modifier = Modifier.fillMaxWidth())
     }

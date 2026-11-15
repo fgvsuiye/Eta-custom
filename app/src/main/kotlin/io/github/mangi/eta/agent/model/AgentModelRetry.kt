@@ -2,11 +2,9 @@ package io.github.mangi.eta.agent.model
 
 import io.github.mangi.eta.agent.runtime.AgentEvent
 import io.github.mangi.eta.agent.runtime.AgentRunController
-import io.github.mangi.eta.agent.runtime.AgentTokenUsage
 
 /** 重试只包围模型请求；完整响应返回前不提交历史或执行本地工具。 */
 internal class AgentModelRetry(
-    private val nanoTime: () -> Long = System::nanoTime,
     private val waitBeforeRetry: (AgentRunController, Long) -> Unit = { controller, delay ->
         controller.awaitRetryDelay(delay)
     },
@@ -39,25 +37,11 @@ internal class AgentModelRetry(
             }
             var hostedToolStarted = false
             var callbackFailed = false
-            var startedAt = nanoTime()
-            var usage: AgentTokenUsage? = null
             try {
                 val response = provider.complete(currentRequest, controller) { event ->
-                    if (event == ProviderEvent.RequestStarted) startedAt = nanoTime()
-                    if (event is ProviderEvent.Usage) usage = (usage ?: AgentTokenUsage()).merge(event.usage)
                     if (event is ProviderEvent.HostedToolStarted) hostedToolStarted = true
                     try {
                         onProviderEvent(round, event)
-                    } catch (failure: Exception) {
-                        callbackFailed = true
-                        throw failure
-                    }
-                }
-                usage?.let {
-                    try {
-                        onEvent(AgentEvent.UsageReceived(round, it.copy(
-                            requestDurationMs = ((nanoTime() - startedAt) / 1_000_000).coerceAtLeast(1),
-                        )))
                     } catch (failure: Exception) {
                         callbackFailed = true
                         throw failure
@@ -71,7 +55,7 @@ internal class AgentModelRetry(
                 if (hostedToolStarted) throw AgentModelFailure(
                     classified.code, false, classified.message.orEmpty(), classified,
                 )
-                if (classified.code == AgentModelFailure.CONTEXT_OVERFLOW) {
+                if (classified.code == "CONTEXT_OVERFLOW") {
                     val downgraded = downgradeRequest(overflowRetries)
                     if (downgraded != null) {
                         overflowRetries += 1
