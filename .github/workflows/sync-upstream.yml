@@ -50,7 +50,7 @@ jobs:
         run: git push origin HEAD:refs/heads/main
 
       - name: 冲突时开 issue 通知
-        if: steps.check.outputs.upstream_ahead == 'true' && steps.merge.outcome == 'failure'
+        if: always() && steps.check.outputs.upstream_ahead == 'true' && steps.merge.outcome == 'failure'
         uses: actions/github-script@v7
         with:
           script: |
