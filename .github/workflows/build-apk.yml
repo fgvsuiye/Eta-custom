@@ -3,6 +3,7 @@ name: Build APK
 # 出包流水线：手动触发或推送 v* 标签时触发。
 # 无 tag 触发时只上传 artifact；有 tag 时创建 GitHub Release 并附上 APK。
 # 签名使用仓库内 signing/eta-custom.jks（自用定制版固定签名，每次构建一致，可覆盖安装）。
+# Release 说明为手写 Markdown 定制内容，不引用提交链接。
 
 on:
   workflow_dispatch:
@@ -42,10 +43,11 @@ jobs:
         id: apk
         run: |
           apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
-          version=$(basename "$apk" .apk)
-          cp "$apk" "Eta-custom-${GITHUB_REF_NAME:-manual}-${version}.apk"
-          echo "apk_path=$(ls Eta-custom-*.apk)" >> "$GITHUB_OUTPUT"
-          echo "apk_name=$(ls Eta-custom-*.apk)" >> "$GITHUB_OUTPUT"
+          version=$(basename "$apk" .apk | sed 's/^Eta-v//')
+          final="Eta-custom-${GITHUB_REF_NAME}.apk"
+          cp "$apk" "$final"
+          echo "apk_path=$final" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
@@ -57,5 +59,39 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body: |
+            # Eta-custom ${{ github.ref_name }}
+
+            上游 [Mangi-11/Eta](https://github.com/Mangi-11/Eta) **3.4.4** 基座，仅保留一项定制功能：**提示词与工具边界**。其余功能与上游最新版完全一致。
+
+            ## 定制内容
+
+            **提示词工作台**（设置 → 提示词工作台）
+
+            - 自定义系统提示词、人格与追加指令；版本历史与一键回滚
+            - 预设管理：内置 7 套预设，支持导入导出（可携带工具集）
+            - 请求快照：每轮请求落盘可查——system 提示与工具描述全文，不含密钥与图片
+            - 完整性自检：植入文件、注入框架、护栏句子、越狱特征、版本一致性五项只读检查
+            - 「当前生效提示词」视图：逐段查看最终发给模型的 system 消息与工具清单
+
+            **工具边界**
+
+            - 工具白名单：按分类/组合勾选可用工具，请求侧与预览侧共用同一目录构建
+            - 纯聊天档：不向模型声明任何工具，仅对话（仍可读图）
+            - MCP 工具 schema 单独压缩，显著节省上下文占用
+
+            **记忆注入兜底**
+
+            - MEMORY.md 缺少「# 核心记忆」标题时取文件头部注入，不再静默空注入
+
+            ## 安装说明
+
+            - 需 Android 13+ ARM64 设备（minSdk 33）
+            - 包名与上游正式版相同（io.github.mangi.eta）但签名不同：装过官方正式版需先卸载再装本版
+            - 与官方 beta（io.github.mangi.eta.beta）可共存
+            - 出问题先到上游官方版复现：仅提示词工作台相关界面/行为属于本仓库定制，其余一切与上游一致
+
+            ## 更新方式
+
+            本仓库每日自动合并上游 main；上游发新版后，这里出一个新 tag 的 Release 即可跟进。
           files: ${{ steps.apk.outputs.apk_path }}
