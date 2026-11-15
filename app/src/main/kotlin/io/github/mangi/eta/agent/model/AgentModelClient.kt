@@ -158,8 +158,7 @@ internal object AgentModelClient {
         val compactedAdditionalTools = if (additionalTools.length() == 0) {
             additionalTools
         } else {
-            JSONArray(additionalTools.toString()).also { AgentToolSchemaCompactor.compactMcp(it) }
-        }
+            JSONArray(additionalTools.toString()).also { AgentToolSchemaCompactor.compactMcp(it) }        }
         fun toolsFor(capabilities: AgentToolCapabilities): JSONArray = AgentToolDirectory.build(
             terminalTools = config.terminalTools,
             browserTools = config.browserTools,
@@ -174,6 +173,7 @@ internal object AgentModelClient {
             localWebSearch = !config.usesHostedWebSearch,
             localProfile = LocalToolProfileStore.current(config.providerId, config.model),
             policy = toolPolicy,
+            disabledTools = Prefs.disabledTools(),
             additionalTools = compactedAdditionalTools,
             restrictedToolNames = restrictedToolNames,
             rewriteReply = rewriteReply,
@@ -382,6 +382,7 @@ internal object AgentModelClient {
         val compactedUserTurns: Int = 0,
         val summaryThroughUserTurn: Int = 0,
         val messageId: String = "",
+        val compactionArchiveId: String = "",
     )
 
     fun interface ToolExecutor {

@@ -25,6 +25,7 @@ internal object AgentToolDirectory {
         localWebSearch: Boolean,
         localProfile: LocalToolProfile,
         policy: AgentToolPolicy,
+        disabledTools: Set<String> = emptySet(),
         additionalTools: JSONArray? = null,
         restrictedToolNames: Set<String>? = null,
         rewriteReply: Boolean = false,
@@ -44,6 +45,7 @@ internal object AgentToolDirectory {
             memoryWritable = memoryWritable,
             capabilities = capabilities,
             localWebSearch = localWebSearch,
+            disabledTools = disabledTools,
         )
         if (additionalTools != null) {
             for (index in 0 until additionalTools.length()) {
