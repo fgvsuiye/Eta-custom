@@ -115,6 +115,7 @@ internal object AgentModelClient {
         toolFilter: ((JSONArray) -> JSONArray)? = null,
         onContextSnapshot: (AgentContextSnapshot) -> Unit = {},
         onTranscript: (List<ConversationMessage>) -> Unit = {},
+        restrictedToolNames: Set<String>? = null,
         onEvent: (AgentEvent) -> Unit = {}
     ): ModelResponse.Text {
         config.validate()
@@ -134,8 +135,6 @@ internal object AgentModelClient {
             rootAvailable = initialCapabilities.rootAvailable,
             roleplayContext = roleplayContext,
             executionContext = executionContext,
-            virtualScreenEnabled = initialCapabilities.virtualScreenEnabled,
-            virtualScreenFallbackEnabled = initialCapabilities.virtualScreenFallbackEnabled,
             customization = customization,
         )
         if (rewriteReply) {
@@ -155,7 +154,7 @@ internal object AgentModelClient {
         val transcript = JSONArray()
         // 旧 history 中的无效消息可能在组装时被跳过，系统边界不能由 history 条数倒推。
         val systemCount = AgentPromptBuilder.buildSystemMessages(
-            config, skillContext, memoryContext, initialCapabilities.rootAvailable, roleplayContext, executionContext, initialCapabilities.virtualScreenEnabled, initialCapabilities.virtualScreenFallbackEnabled, customization,
+            config, skillContext, memoryContext, initialCapabilities.rootAvailable, roleplayContext, executionContext, customization,
         ).length()
         // MCP 工具只在 run 开始时压一次：每轮重复解析这 190KB JSON 纯属浪费。
         val compactedAdditionalTools = if (additionalTools.length() == 0) {
@@ -198,7 +197,7 @@ internal object AgentModelClient {
             val capabilities = capabilitiesProvider()
             if (capabilities.rootAvailable != promptRootAvailable) {
                 val systemMessages = AgentPromptBuilder.buildSystemMessages(
-                    config, skillContext, memoryContext, capabilities.rootAvailable, roleplayContext, executionContext, capabilities.virtualScreenEnabled, capabilities.virtualScreenFallbackEnabled, customization,
+                    config, skillContext, memoryContext, capabilities.rootAvailable, roleplayContext, executionContext, customization,
                 )
                 for (index in 0 until systemMessages.length()) {
                     messages.put(index, systemMessages.getJSONObject(index))
@@ -245,6 +244,23 @@ internal object AgentModelClient {
             traceFormatter = traceFormatter,
             onEvent = onEvent,
             purpose = if (rewriteReply) ProviderRequestPurpose.REPLY_REWRITE else ProviderRequestPurpose.CHAT,
+            onContextOverflow = if (rewriteReply) {
+                null
+            } else {
+                val callback: () -> LocalToolProfile? = {
+                    val current = activeProfileOverride
+                        ?: LocalToolProfileStore.current(config.providerId, config.model)
+                    val leaner = current.leaner()
+                    if (leaner == null) {
+                        null
+                    } else {
+                        activeProfileOverride = leaner
+                        onEvent(AgentEvent.ContextOverflowDowngrade(leaner.id))
+                        leaner
+                    }
+                }
+                callback
+            },
             roleplayContext = roleplayContext,
             initialSupplementIndex = initialSupplementIndex,
             toolsForRound = ::toolsForRound,

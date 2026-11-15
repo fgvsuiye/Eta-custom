@@ -21,11 +21,9 @@ internal object AgentPromptBuilder {
         rootAvailable: Boolean = false,
         roleplayContext: RoleplayRunContext? = null,
         executionContext: TerminalExecutionContext? = null,
-        virtualScreenEnabled: Boolean = false,
-        virtualScreenFallbackEnabled: Boolean = false,
         customization: PromptCustomization = PromptCustomization(),
     ): JSONArray {
-        val messages = buildSystemMessages(config, skillContext, memoryContext, rootAvailable, roleplayContext, executionContext, virtualScreenEnabled, virtualScreenFallbackEnabled, customization)
+        val messages = buildSystemMessages(config, skillContext, memoryContext, rootAvailable, roleplayContext, executionContext, customization)
         val chatOnly = LocalToolProfileStore.current(config.providerId, config.model) == LocalToolProfile.CHAT
         history.forEach { item ->
             runCatching { AgentConversationCodec.toJsonObject(item) }.getOrNull()?.let(messages::put)
@@ -46,8 +44,6 @@ internal object AgentPromptBuilder {
         rootAvailable: Boolean,
         roleplayContext: RoleplayRunContext? = null,
         executionContext: TerminalExecutionContext? = null,
-        virtualScreenEnabled: Boolean = false,
-        virtualScreenFallbackEnabled: Boolean = false,
         customization: PromptCustomization = PromptCustomization(),
     ): JSONArray {
         val messages = JSONArray()

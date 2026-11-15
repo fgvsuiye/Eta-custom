@@ -801,24 +801,9 @@ fun AgentAppRoot(
                             AgentMemoryAction.DismissNotice -> memory.dismissMemoryNotice()
                         }
                     },
-                    onOpenDocument = { pushRoute(AppRoute.MemoryDocument) },
                 )
             }
-            entry<AppRoute.MemoryDocument>(swipeDismiss = swipeDismiss) {
-                io.github.mangi.eta.ui.screens.memory.MemoryDocumentScreen(
-                    state = memory.memoryState,
-                    onAction = { action ->
-                        when (action) {
-                            is AgentMemoryAction.DraftChanged -> memory.updateMemoryDraft(action.content)
-                            AgentMemoryAction.Save -> memory.saveMemory()
-                            AgentMemoryAction.Clear -> memory.clearMemory()
-                            AgentMemoryAction.NavigateBack -> popRoute()
-                            else -> Unit
-                        }
-                    },
-                    onBack = ::popRoute,
-                )
-            }
+
             entry<AppRoute.LinuxEnvironment>(swipeDismiss = swipeDismiss) {
                 LinuxEnvironmentScreen(
                     context = context,

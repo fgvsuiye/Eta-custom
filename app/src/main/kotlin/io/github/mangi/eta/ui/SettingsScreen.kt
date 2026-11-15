@@ -805,16 +805,15 @@ private fun SettingsPageContent(
 
             // ── 提示词与工具 ──────────────────────────────────────────
             item(key = "section_prompt_studio") {
-                if (!sectionVisible("section_prompt_studio")) return@item
-                EtaPreferenceGroupTitle(stringResource(R.string.prompt_studio_section))
-                EtaPreferenceGroup {
-                    EtaArrowPreference(
+                SmallTitle(stringResource(R.string.prompt_studio_section))
+                SettingsGroupCard {
+                    ArrowPreference(
                         title = stringResource(R.string.prompt_studio_title),
                         summary = stringResource(R.string.prompt_studio_section_summary),
                         startAction = {
-                            EtaPreferenceIcon(
+                            SettingsIcon(
                                 icon = Icons.Rounded.Psychology,
-                                tint = EtaPreferenceColors.Blue,
+                                tint = SettingsIconColors.Blue,
                             )
                         },
                         onClick = { onNavigate(AppRoute.PromptStudio) },
