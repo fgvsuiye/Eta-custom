@@ -40,10 +40,18 @@ jobs:
         id: merge
         if: steps.check.outputs.upstream_ahead == 'true'
         run: |
-          git merge --no-ff upstream/main || {
+          if git merge --no-ff upstream/main; then
+            exit 0
+          fi
+          # README.md 为本仓库定制版，冲突时固定取本仓库版本；其他文件冲突则放弃合并。
+          if git diff --name-only --diff-filter=U | grep -v '^README.md$' | grep -q .; then
+            echo "README 以外的文件存在冲突，放弃合并" >&2
             git merge --abort
             exit 1
-          }
+          fi
+          git checkout --ours README.md
+          git add README.md
+          git commit --no-edit
 
       - name: 推送合并结果
         if: steps.check.outputs.upstream_ahead == 'true' && steps.merge.outcome == 'success'
@@ -55,12 +63,22 @@ jobs:
         with:
           script: |
             const title = '[sync] 上游合并冲突待处理';
-            const body = '自动同步 `Mangi-11/Eta` 时发生冲突，需要人工处理。\n\n' +
+            const body = '自动同步 `Mangi-11/Eta` 时发生冲突（README.md 以外的文件），需要人工处理。\n\n' +
               '- 处理方式：本地执行 `git fetch upstream && git merge upstream/main`，' +
-              '解决冲突后保留顶部定制提交（提示词与工具边界），' +
-              '再 `git push origin HEAD:refs/heads/main`。\n\n' +
+              '解决冲突后保留定制功能（提示词与工具边界、会话多选、GitHub 账号等），' +
+              '再 `git push origin HEAD:refs/heads/main`。README.md 的冲突会自动取本仓库定制版。\n\n' +
               '关闭本 issue 表示处理完成。';
-            const existing = await github.rest.issues.list({ owner: context.repo.owner, repo: context.repo.repo, labels: ['sync-conflict'], state: 'open' });
-            if (existing.data.length === 0) {
-              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, body, labels: ['sync-conflict'] });
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            if (!existing.data.some(issue => issue.title === title)) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
             }
