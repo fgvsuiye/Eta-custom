@@ -60,7 +60,6 @@
   <string name="action_more">更多选项</string>
   <string name="action_open_terminal">打开终端</string>
   <string name="action_open_browser">打开浏览器</string>
-  <string name="action_launch_kimi_web">启动 Kimi Web</string>
   <string name="route_tools">工具能力</string>
   <string name="route_permissions">权限</string>
   <string name="route_system_enhancements">系统增强</string>
@@ -435,6 +434,7 @@
   <string name="ui_reset_built_in_configuration_35b6ec">重置内置配置</string>
   <string name="ui_lock_screen_evokes_automatic_voice_input_1cde18">锁屏唤起自动语音输入</string>
   <string name="ui_deep_thinking_enabled_by_default_c032d6">默认启用思考</string>
+  <string name="settings_default_reasoning_effort">默认思考深度</string>
   <string name="tool_tap_area">点击区域</string>
   <string name="tool_current_context">时间与位置</string>
   <string name="tool_memory_get">读取记忆</string>
@@ -992,15 +992,7 @@
   <string name="linux_ssh_tools">SSH 远程访问</string>
   <string name="linux_ssh_tools_summary">安装完整 OpenSSH（sshd、ssh-keygen、ssh-agent 与 sftp-server）；基础环境已含 ssh/scp/sftp 客户端</string>
   <string name="linux_ssh_tools_ready">sshd、ssh-keygen 与 ssh-agent 已就绪</string>
-  <string name="linux_kimi_tools">Kimi Code</string>
-  <string name="linux_kimi_tools_summary">通过 npm 安装最新正式版 Kimi Code；需要先安装 Node.js 环境</string>
-  <string name="linux_kimi_tools_ready">Kimi Code 已就绪，在终端运行 kimi 即可开始</string>
   <string name="linux_profile_dependency_missing">需要先安装 %1$s</string>
-  <string name="linux_kimi_web_launch">启动 Web UI</string>
-  <string name="linux_kimi_web_starting">正在启动…</string>
-  <string name="linux_kimi_web_failed_start">Kimi Web 启动失败</string>
-  <string name="linux_kimi_web_failed_url">未获取到 Web UI 地址，请到后台任务查看日志</string>
-  <string name="linux_kimi_web_failed_browser">没有可用的浏览器</string>
   <string name="linux_profile_stage_checking">检查 Linux 基础环境</string>
   <string name="linux_profile_stage_downloading">下载%1$s</string>
   <string name="linux_profile_stage_downloading_percent">下载%1$s · %2$d%%</string>
@@ -1216,7 +1208,7 @@
   <string name="speech_group_voice">声音</string>
   <string name="speech_auto_speak">自动播报回答</string>
   <string name="speech_auto_speak_summary">仅在助手浮窗可见时播报语音提问的最终回答</string>
-  <string name="speech_overview_note">聊天中的语音输入会先转成可编辑文字。回答可手动朗读，开始录音会停止播放。</string>
+  <string name="speech_overview_note">聊天中轻点麦克风可转成可编辑文字，按住说话松手直接发送。回答可手动朗读，开始录音会停止播放。</string>
   <string name="speech_service_and_model">服务与模型</string>
   <string name="speech_asr_qwen_realtime">千问 · 实时识别</string>
   <string name="speech_asr_qwen_flash">千问 · 短音频识别</string>
@@ -1311,6 +1303,8 @@
   <string name="speech_oss_configure">配置自有 OSS</string>
   <string name="speech_dictation">语音输入</string>
   <string name="speech_dictation_finish">完成听写</string>
+  <string name="speech_hold_release_to_cancel">松开取消</string>
+  <string name="speech_hold_recognizing_send">正在识别并发送…</string>
   <string name="speech_read_aloud">朗读回答</string>
   <string name="speech_read_stop">停止朗读</string>
   <string name="speech_disable_auto_read">关闭自动朗读</string>
@@ -1499,4 +1493,6 @@
   <string name="assistant_overlay_settings_follow_primary_hint">默认继承主对话当前使用的模型</string>
   <string name="assistant_overlay_settings_reasoning_follow_default">跟随默认</string>
   <string name="assistant_overlay_settings_note">单独配置电源键或系统助手唤起的全局对话浮窗所使用的模型与思考等级；日常轻量指令可选用响应更快的轻量模型并降低或关闭思考，主对话仍保留主力模型。</string>
+  <string name="settings_keep_screen_on">运行期间保持屏幕常亮</string>
+  <string name="settings_keep_screen_on_summary">Agent 执行任务期间防止屏幕自动熄灭</string>
 </resources>

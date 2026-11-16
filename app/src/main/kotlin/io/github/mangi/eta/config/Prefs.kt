@@ -7,6 +7,7 @@ import io.github.mangi.eta.agent.context.PersonalSearchTools
 import io.github.mangi.eta.agent.model.AgentFileToolCatalog
 import io.github.mangi.eta.agent.model.AgentPhoneToolCatalog
 import io.github.mangi.eta.agent.model.AgentTerminalToolCatalog
+import io.github.mangi.eta.data.model.ReasoningEffort
 import org.json.JSONArray
 
 /**
@@ -48,9 +49,11 @@ internal object Prefs {
         const val AGENT_DEVICE_SENSITIVE_READ_TOOLS = "agent_device_sensitive_read_tools"
         const val AGENT_DEVICE_SENSITIVE_ACTION_TOOLS = "agent_device_sensitive_action_tools"
         const val AGENT_THINKING_ENABLED = "agent_thinking_enabled"
+        const val AGENT_DEFAULT_REASONING_EFFORT = "agent_default_reasoning_effort"
         const val AGENT_AUTO_COMPACTION_ENABLED = "agent_auto_compaction_enabled"
         const val AGENT_SUBAGENT_ENABLED = "agent_subagent_enabled"
         const val AGENT_VIRTUAL_DISPLAY_ENABLED = "agent_virtual_display_enabled"
+        const val AGENT_KEEP_SCREEN_ON_ENABLED = "agent_keep_screen_on_enabled"
         const val AGENT_RUNTIME_CONFIG_JSON = "agent_runtime_config_json"
         const val AGENT_DISABLED_TOOLS_JSON = "agent_disabled_tools_json"
 
@@ -74,6 +77,7 @@ internal object Prefs {
             AGENT_AUTO_COMPACTION_ENABLED to true,
             AGENT_SUBAGENT_ENABLED to true,
             AGENT_VIRTUAL_DISPLAY_ENABLED to true,
+            AGENT_KEEP_SCREEN_ON_ENABLED to true,
         )
 
         /** 由 Eta Runtime 最终裁决、不要求 Xposed 框架在线的开关。 */
@@ -87,6 +91,7 @@ internal object Prefs {
             AGENT_AUTO_COMPACTION_ENABLED,
             AGENT_SUBAGENT_ENABLED,
             AGENT_VIRTUAL_DISPLAY_ENABLED,
+            AGENT_KEEP_SCREEN_ON_ENABLED,
         )
     }
 
@@ -135,6 +140,16 @@ internal object Prefs {
 
     fun getString(key: String): String {
         return remote?.getString(key, "") ?: ""
+    }
+
+    fun defaultReasoningEffort(
+        preferences: SharedPreferences? = localAgent ?: remote,
+    ): ReasoningEffort {
+        val raw = runCatching {
+            preferences?.getString(Keys.AGENT_DEFAULT_REASONING_EFFORT, null)
+        }.getOrNull()
+        val parsed = ReasoningEffort.fromWireValue(raw)
+        return if (parsed != null && parsed != ReasoningEffort.OFF) parsed else ReasoningEffort.DEFAULT
     }
 
     fun powerAssistantTarget(): PowerAssistantTarget = powerAssistantTarget(remote)

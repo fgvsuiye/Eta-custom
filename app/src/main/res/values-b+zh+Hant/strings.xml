@@ -59,7 +59,6 @@
   <string name="action_more">更多選項</string>
   <string name="action_open_terminal">開啟終端機</string>
   <string name="action_open_browser">開啟瀏覽器</string>
-  <string name="action_launch_kimi_web">啟動 Kimi Web</string>
   <string name="route_tools">工具</string>
   <string name="route_permissions">權限</string>
   <string name="route_system_enhancements">系統增強</string>
@@ -423,6 +422,7 @@
   <string name="ui_reset_built_in_configuration_35b6ec">重設內建設定</string>
   <string name="ui_lock_screen_evokes_automatic_voice_input_1cde18">鎖定畫面喚起自動語音輸入</string>
   <string name="ui_deep_thinking_enabled_by_default_c032d6">預設啟用思考</string>
+  <string name="settings_default_reasoning_effort">預設思考深度</string>
   <string name="tool_tap_area">點按區域</string>
   <string name="tool_current_context">時間與位置</string>
   <string name="tool_memory_get">讀取記憶</string>
@@ -980,15 +980,7 @@
   <string name="linux_ssh_tools">SSH 遠端連線</string>
   <string name="linux_ssh_tools_summary">安裝完整 OpenSSH（sshd、ssh-keygen、ssh-agent 與 sftp-server）；基礎環境已含 ssh/scp/sftp 用戶端</string>
   <string name="linux_ssh_tools_ready">sshd、ssh-keygen 與 ssh-agent 已就緒</string>
-  <string name="linux_kimi_tools">Kimi Code</string>
-  <string name="linux_kimi_tools_summary">透過 npm 安裝最新正式版 Kimi Code；需要先安裝 Node.js 環境</string>
-  <string name="linux_kimi_tools_ready">Kimi Code 已就緒，在終端機執行 kimi 即可開始</string>
   <string name="linux_profile_dependency_missing">請先安裝 %1$s</string>
-  <string name="linux_kimi_web_launch">啟動 Web UI</string>
-  <string name="linux_kimi_web_starting">正在啟動…</string>
-  <string name="linux_kimi_web_failed_start">Kimi Web 啟動失敗</string>
-  <string name="linux_kimi_web_failed_url">未取得 Web UI 位址，請到背景任務查看日誌</string>
-  <string name="linux_kimi_web_failed_browser">沒有可用的瀏覽器</string>
   <string name="linux_profile_stage_checking">檢查 Linux 基礎環境</string>
   <string name="linux_profile_stage_downloading">下載%1$s</string>
   <string name="linux_profile_stage_downloading_percent">下載%1$s · %2$d%%</string>
@@ -1204,7 +1196,7 @@
   <string name="speech_group_voice">聲音</string>
   <string name="speech_auto_speak">自動播報回答</string>
   <string name="speech_auto_speak_summary">僅在助手浮窗可見時播報語音提問的最終回答</string>
-  <string name="speech_overview_note">聊天中的語音輸入會先轉成可編輯文字。回答可手動朗讀，開始錄音會停止播放。</string>
+  <string name="speech_overview_note">聊天中輕點麥克風可轉成可編輯文字，按住說話放開直接傳送。回答可手動朗讀，開始錄音會停止播放。</string>
   <string name="speech_service_and_model">服務與模型</string>
   <string name="speech_asr_qwen_realtime">千問 · 即時識別</string>
   <string name="speech_asr_qwen_flash">千問 · 短音訊識別</string>
@@ -1299,6 +1291,8 @@
   <string name="speech_oss_configure">配置自有 OSS</string>
   <string name="speech_dictation">語音輸入</string>
   <string name="speech_dictation_finish">完成聽寫</string>
+  <string name="speech_hold_release_to_cancel">放開取消</string>
+  <string name="speech_hold_recognizing_send">正在識別並傳送…</string>
   <string name="speech_read_aloud">朗讀回答</string>
   <string name="speech_read_stop">停止朗讀</string>
   <string name="speech_disable_auto_read">關閉自動朗讀</string>
@@ -1395,4 +1389,6 @@
   <string name="assistant_overlay_settings_follow_primary_hint">預設繼承主對話目前使用的模型</string>
   <string name="assistant_overlay_settings_reasoning_follow_default">跟隨預設</string>
   <string name="assistant_overlay_settings_note">單獨設定電源鍵或系統助手喚起的全域對話浮窗所使用的模型與思考等級；日常輕量指令可選用回應更快的輕量模型並降低或關閉思考，主對話仍保留主力模型。</string>
+  <string name="settings_keep_screen_on">執行期間保持螢幕恆亮</string>
+  <string name="settings_keep_screen_on_summary">Agent 執行任務期間防止螢幕自動熄滅</string>
 </resources>

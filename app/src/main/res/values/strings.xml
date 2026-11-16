@@ -58,7 +58,6 @@
   <string name="action_more">More options</string>
   <string name="action_open_terminal">Open terminal</string>
   <string name="action_open_browser">Open browser</string>
-  <string name="action_launch_kimi_web">Launch Kimi Web</string>
   <string name="route_tools">Tools</string>
   <string name="route_skills" translatable="false">Skills</string>
   <string name="route_permissions">Permissions</string>
@@ -440,6 +439,7 @@
   <string name="ui_reset_built_in_configuration_35b6ec">Reset built-in settings</string>
   <string name="ui_lock_screen_evokes_automatic_voice_input_1cde18">Lock screen evokes automatic voice input</string>
   <string name="ui_deep_thinking_enabled_by_default_c032d6">Reasoning enabled by default</string>
+  <string name="settings_default_reasoning_effort">Default reasoning effort</string>
   <string name="tool_tap_area">Tap area</string>
   <string name="tool_current_context">Time and location</string>
   <string name="tool_memory_get">Read memory</string>
@@ -1007,15 +1007,7 @@
   <string name="linux_ssh_tools">SSH remote access</string>
   <string name="linux_ssh_tools_summary">Install the full OpenSSH suite (sshd, ssh-keygen, ssh-agent, and sftp-server); the base environment already includes the ssh/scp/sftp client</string>
   <string name="linux_ssh_tools_ready">sshd, ssh-keygen, and ssh-agent are ready</string>
-  <string name="linux_kimi_tools">Kimi Code</string>
-  <string name="linux_kimi_tools_summary">Install the latest Kimi Code release via npm; requires the Node.js environment first</string>
-  <string name="linux_kimi_tools_ready">Kimi Code is ready; run kimi in the terminal</string>
   <string name="linux_profile_dependency_missing">Install %1$s first</string>
-  <string name="linux_kimi_web_launch">Launch Web UI</string>
-  <string name="linux_kimi_web_starting">Starting…</string>
-  <string name="linux_kimi_web_failed_start">Failed to start Kimi Web</string>
-  <string name="linux_kimi_web_failed_url">Web UI address not found; check background task logs</string>
-  <string name="linux_kimi_web_failed_browser">No browser available</string>
   <string name="linux_profile_stage_checking">Checking the Linux base environment</string>
   <string name="linux_profile_stage_downloading">Downloading %1$s</string>
   <string name="linux_profile_stage_downloading_percent">Downloading %1$s · %2$d%%</string>
@@ -1235,7 +1227,7 @@
   <string name="speech_group_voice">Voice</string>
   <string name="speech_auto_speak">Speak answers automatically</string>
   <string name="speech_auto_speak_summary">Only speaks final answers to voice questions while the assistant overlay is visible</string>
-  <string name="speech_overview_note">Dictation in chat turns speech into editable text first. Answers can be read aloud manually; recording stops playback.</string>
+  <string name="speech_overview_note">Tap the mic in chat to insert editable text, or hold to speak and release to send. Answers can be read aloud manually; recording stops playback.</string>
   <string name="speech_service_and_model">Service &amp; model</string>
   <string name="speech_asr_qwen_realtime">Qwen · Realtime</string>
   <string name="speech_asr_qwen_flash">Qwen · Short audio</string>
@@ -1331,6 +1323,8 @@
   <string name="speech_oss_configure">Configure your own OSS bucket</string>
   <string name="speech_dictation">Voice input</string>
   <string name="speech_dictation_finish">Finish dictation</string>
+  <string name="speech_hold_release_to_cancel">Release to cancel</string>
+  <string name="speech_hold_recognizing_send">Transcribing and sending…</string>
   <string name="speech_read_aloud">Read aloud</string>
   <string name="speech_read_stop">Stop reading</string>
   <string name="speech_disable_auto_read">Disable auto read-aloud</string>
@@ -1898,4 +1892,6 @@
   <string name="assistant_overlay_settings_follow_primary_hint">Uses the default main conversation model</string>
   <string name="assistant_overlay_settings_reasoning_follow_default">Follow default</string>
   <string name="assistant_overlay_settings_note">Independently configure the model and reasoning level for the floating assistant triggered by the power key or system assistant. For quick everyday tasks, choosing a fast lightweight model with lower or disabled reasoning helps reduce latency and token usage.</string>
+  <string name="settings_keep_screen_on">Keep screen on while running</string>
+  <string name="settings_keep_screen_on_summary">Prevent screen sleep while an agent task is running</string>
 </resources>
