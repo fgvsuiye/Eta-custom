@@ -1,5 +1,6 @@
 package io.github.mangi.eta.ui.components
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,14 +34,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -127,6 +132,7 @@ internal fun ConversationPanePanel(
     onConversationRename: (ConversationSummaryUi) -> Unit,
     onConversationExport: (ConversationSummaryUi) -> Unit,
     onConversationDelete: (ConversationSummaryUi) -> Unit,
+    onConversationsBatchDelete: (List<ConversationSummaryUi>) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenModelProviders: () -> Unit,
     onOpenTools: () -> Unit,
@@ -144,6 +150,24 @@ internal fun ConversationPanePanel(
     val couiBackdrop = if (isCoui) rememberCouiBackdrop() else null
     val miuixBackdrop = if (!isCoui) rememberTopBarBackdrop() else null
     val barInsets = remember { PaneBarInsets() }
+
+    // 多选批量删除：选中状态只存活于面板组合期间，侧栏关闭即清空。
+    var selectionMode by remember { mutableStateOf(false) }
+    val selectedIds = remember { mutableStateMapOf<String, Boolean>() }
+    val checkedConversations = state.conversations.filter { selectionMode && selectedIds[it.id] == true }
+    val exitSelectionMode: () -> Unit = {
+        selectionMode = false
+        selectedIds.clear()
+    }
+    LaunchedEffect(isRevealed) {
+        if (!isRevealed) {
+            selectionMode = false
+            selectedIds.clear()
+        }
+    }
+    BackHandler(enabled = selectionMode && isRevealed) {
+        exitSelectionMode()
+    }
     val bodyCaptureModifier = when {
         isCoui && couiBackdrop != null -> Modifier.couiBackdrop(couiBackdrop)
         !isCoui && miuixBackdrop != null -> Modifier.captureForTopBar(miuixBackdrop)
@@ -185,7 +209,7 @@ internal fun ConversationPanePanel(
                             verticalArrangement = Arrangement.spacedBy(ConversationPanelMetrics.RowGap),
                             overscrollEffect = null,
                         ) {
-                            if (!isSearching) {
+                            if (!isSearching && !selectionMode) {
                                 item(key = "pane_workbench") {
                                     PaneWorkbenchSection(
                                         activeModelLabel = activeModelLabel,
@@ -214,9 +238,23 @@ internal fun ConversationPanePanel(
                                         items = group.items,
                                         key = { it.id },
                                     ) { conversation ->
+                                        val checked = selectionMode && selectedIds[conversation.id] == true
                                         ConversationHistoryRow(
                                             conversation = conversation,
-                                            selected = conversation.id == state.selectedConversationId,
+                                            selected = if (selectionMode) checked else conversation.id == state.selectedConversationId,
+                                            inSelectionMode = selectionMode,
+                                            checked = checked,
+                                            onToggleChecked = {
+                                                if (selectedIds.remove(conversation.id) == null) {
+                                                    selectedIds[conversation.id] = true
+                                                } else if (selectedIds.isEmpty()) {
+                                                    selectionMode = false
+                                                }
+                                            },
+                                            onEnterMultiSelect = {
+                                                selectionMode = true
+                                                selectedIds[conversation.id] = true
+                                            },
                                             onClick = { onConversationSelected(conversation.id) },
                                             onTogglePin = { onConversationTogglePin(conversation) },
                                             onRename = { onConversationRename(conversation) },
@@ -228,12 +266,37 @@ internal fun ConversationPanePanel(
                             }
                         }
                     }
-                    ConversationPaneTopBar(
-                        containerColor = containerColor,
-                        couiBackdrop = couiBackdrop,
-                        miuixBackdrop = miuixBackdrop,
-                        onNewConversation = onNewConversation,
-                    )
+                    if (selectionMode) {
+                        ConversationSelectionBar(
+                            checkedCount = checkedConversations.size,
+                            allSelected = state.conversations.isNotEmpty() &&
+                                checkedConversations.size == state.conversations.size,
+                            containerColor = containerColor,
+                            couiBackdrop = couiBackdrop,
+                            miuixBackdrop = miuixBackdrop,
+                            onSelectAllToggle = {
+                                if (checkedConversations.size == state.conversations.size) {
+                                    selectedIds.clear()
+                                } else {
+                                    state.conversations.forEach { selectedIds[it.id] = true }
+                                }
+                            },
+                            onDeleteSelected = {
+                                if (checkedConversations.isNotEmpty()) {
+                                    onConversationsBatchDelete(checkedConversations)
+                                }
+                                exitSelectionMode()
+                            },
+                            onClose = exitSelectionMode,
+                        )
+                    } else {
+                        ConversationPaneTopBar(
+                            containerColor = containerColor,
+                            couiBackdrop = couiBackdrop,
+                            miuixBackdrop = miuixBackdrop,
+                            onNewConversation = onNewConversation,
+                        )
+                    }
                     ConversationPaneBottomDock(
                         query = state.searchQuery,
                         isRevealed = isRevealed,
@@ -566,6 +629,10 @@ private fun ConversationSectionHeader(
 private fun ConversationHistoryRow(
     conversation: ConversationSummaryUi,
     selected: Boolean,
+    inSelectionMode: Boolean = false,
+    checked: Boolean = false,
+    onToggleChecked: () -> Unit = {},
+    onEnterMultiSelect: () -> Unit = {},
     onClick: () -> Unit,
     onTogglePin: () -> Unit,
     onRename: () -> Unit,
@@ -652,10 +719,14 @@ private fun ConversationHistoryRow(
                 .couiMenuAnchor(anchor)
                 .then(rowModifier)
                 .combinedClickable(
-                    onClick = onClick,
+                    onClick = if (inSelectionMode) onToggleChecked else onClick,
                     onLongClick = {
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        anchor.open { showActionMenu = true }
+                        if (inSelectionMode) {
+                            onToggleChecked()
+                        } else {
+                            anchor.open { showActionMenu = true }
+                        }
                     },
                 )
                 .padding(
@@ -666,6 +737,15 @@ private fun ConversationHistoryRow(
                 ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (inSelectionMode) {
+                RowSelectionCheck(
+                    checked = checked,
+                    accentColor = accentColor,
+                    outlineColor = summaryColor.copy(alpha = 0.55f),
+                )
+                Spacer(Modifier.width(11.dp))
+            }
+
             if (conversation.characterName != null) {
                 CharacterAvatar(
                     name = conversation.characterName,
@@ -733,7 +813,7 @@ private fun ConversationHistoryRow(
                 )
             }
 
-            if (selected) {
+            if (selected && !inSelectionMode) {
                 val moreLabel = stringResource(R.string.action_more)
                 Box(
                     modifier = Modifier
@@ -759,7 +839,7 @@ private fun ConversationHistoryRow(
         }
 
         // 将选中指示条放在左内边距留白区，保证选中行与普通行标题严格处于同一条左对齐基线。
-        if (selected && conversation.characterName == null) {
+        if (selected && !inSelectionMode && conversation.characterName == null) {
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -781,16 +861,18 @@ private fun ConversationHistoryRow(
         val renameText = stringResource(R.string.action_rename)
         val exportText = stringResource(R.string.action_export)
         val deleteText = stringResource(R.string.action_delete)
+        val multiSelectText = stringResource(R.string.action_multi_select)
         when (LocalUiStyle.current) {
             AppearanceUiStyle.COUI -> {
                 val destructiveColor = CouiDialogDefaults.themeColors().destructive
-                val menuItems = remember(pinText, renameText, exportText, deleteText, destructiveColor) {
+                val menuItems = remember(multiSelectText, pinText, renameText, exportText, deleteText, destructiveColor) {
                     listOf(
-                        CouiMenuItem(value = 0, text = pinText, icon = Icons.Outlined.PushPin),
-                        CouiMenuItem(value = 1, text = renameText, icon = Icons.Outlined.Edit),
-                        CouiMenuItem(value = 2, text = exportText, icon = Icons.Outlined.Download),
+                        CouiMenuItem(value = 0, text = multiSelectText, icon = Icons.Outlined.CheckCircle),
+                        CouiMenuItem(value = 1, text = pinText, icon = Icons.Outlined.PushPin),
+                        CouiMenuItem(value = 2, text = renameText, icon = Icons.Outlined.Edit),
+                        CouiMenuItem(value = 3, text = exportText, icon = Icons.Outlined.Download),
                         CouiMenuItem(
-                            value = 3,
+                            value = 4,
                             text = deleteText,
                             icon = Icons.Outlined.Delete,
                             iconTint = destructiveColor,
@@ -805,10 +887,11 @@ private fun ConversationHistoryRow(
                     onItemClick = { item ->
                         showActionMenu = false
                         when (item.value) {
-                            0 -> onTogglePin()
-                            1 -> onRename()
-                            2 -> onExport()
-                            3 -> onDelete()
+                            0 -> onEnterMultiSelect()
+                            1 -> onTogglePin()
+                            2 -> onRename()
+                            3 -> onExport()
+                            4 -> onDelete()
                         }
                     },
                     anchor = anchor,
@@ -821,6 +904,18 @@ private fun ConversationHistoryRow(
                     alignment = PopupPositionProvider.Align.BottomEnd,
                     onDismissRequest = { showActionMenu = false },
                 ) {
+                    val multiSelectItem = remember(multiSelectText) {
+                        DropdownItem(
+                            text = multiSelectText,
+                            icon = { modifier ->
+                                Icon(
+                                    imageVector = Icons.Outlined.CheckCircle,
+                                    contentDescription = null,
+                                    modifier = modifier.size(ConversationPanelMetrics.ActionIconSize),
+                                )
+                            },
+                        )
+                    }
                     val pinItem = remember(pinText) {
                         DropdownItem(
                             text = pinText,
@@ -877,10 +972,20 @@ private fun ConversationHistoryRow(
                     )
                     ListPopupColumn {
                         DropdownImpl(
-                            item = pinItem,
-                            optionSize = 4,
+                            item = multiSelectItem,
+                            optionSize = 5,
                             isSelected = false,
                             index = 0,
+                            onSelectedIndexChange = {
+                                showActionMenu = false
+                                onEnterMultiSelect()
+                            },
+                        )
+                        DropdownImpl(
+                            item = pinItem,
+                            optionSize = 5,
+                            isSelected = false,
+                            index = 1,
                             onSelectedIndexChange = {
                                 showActionMenu = false
                                 onTogglePin()
@@ -888,9 +993,9 @@ private fun ConversationHistoryRow(
                         )
                         DropdownImpl(
                             item = renameItem,
-                            optionSize = 4,
+                            optionSize = 5,
                             isSelected = false,
-                            index = 1,
+                            index = 2,
                             onSelectedIndexChange = {
                                 showActionMenu = false
                                 onRename()
@@ -898,9 +1003,9 @@ private fun ConversationHistoryRow(
                         )
                         DropdownImpl(
                             item = exportItem,
-                            optionSize = 4,
+                            optionSize = 5,
                             isSelected = false,
-                            index = 2,
+                            index = 3,
                             onSelectedIndexChange = {
                                 showActionMenu = false
                                 onExport()
@@ -908,9 +1013,9 @@ private fun ConversationHistoryRow(
                         )
                         DropdownImpl(
                             item = deleteItem,
-                            optionSize = 4,
+                            optionSize = 5,
                             isSelected = false,
-                            index = 3,
+                            index = 4,
                             dropdownColors = deleteColors,
                             onSelectedIndexChange = {
                                 showActionMenu = false
@@ -921,6 +1026,37 @@ private fun ConversationHistoryRow(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RowSelectionCheck(
+    checked: Boolean,
+    accentColor: Color,
+    outlineColor: Color,
+) {
+    if (checked) {
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(CircleShape)
+                .background(accentColor, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Check,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = Color.White,
+            )
+        }
+    } else {
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(CircleShape)
+                .border(1.4.dp, outlineColor, CircleShape),
+        )
     }
 }
 

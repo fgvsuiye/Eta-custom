@@ -84,6 +84,7 @@ import io.github.mangi.eta.ui.screens.characters.CharacterLibraryScreen
 import io.github.mangi.eta.ui.screens.characters.CharacterMemoryScreen
 import io.github.mangi.eta.ui.screens.characters.CharacterPersonaScreen
 import io.github.mangi.eta.ui.screens.enhance.SystemEnhanceScreen
+import io.github.mangi.eta.ui.screens.github.GitHubAccountScreen
 import io.github.mangi.eta.ui.screens.home.AgentHomeScreen
 import io.github.mangi.eta.ui.screens.mcp.McpServerDetailScreen
 import io.github.mangi.eta.ui.screens.mcp.McpServersScreen
@@ -190,6 +191,7 @@ fun AgentAppRoot(
     var conversationPaneOpen by rememberSaveable { mutableStateOf(false) }
     var conversationRenameTarget by remember { mutableStateOf<ConversationSummaryUi?>(null) }
     var conversationDeleteTarget by remember { mutableStateOf<ConversationSummaryUi?>(null) }
+    var conversationBatchDeleteTargets by remember { mutableStateOf<List<ConversationSummaryUi>?>(null) }
     var conversationExportTarget by remember { mutableStateOf<ConversationSummaryUi?>(null) }
     var messageDeleteTarget by remember { mutableStateOf<MessageMutationTarget?>(null) }
     var messageRegenerateTarget by remember { mutableStateOf<MessageMutationTarget?>(null) }
@@ -347,6 +349,9 @@ fun AgentAppRoot(
             },
             onConversationDelete = { conversation ->
                 conversationDeleteTarget = conversation
+            },
+            onConversationsBatchDelete = { targets ->
+                conversationBatchDeleteTargets = targets
             },
             onOpenTools = { pushRoute(AppRoute.Tools) },
             onOpenSkills = { pushRoute(AppRoute.Skills) },
@@ -867,6 +872,9 @@ fun AgentAppRoot(
                     onBack = ::popRoute,
                 )
             }
+            entry<AppRoute.GitHubAccount>(swipeDismiss = swipeDismiss) {
+                GitHubAccountScreen(onBack = ::popRoute)
+            }
             entry<AppRoute.McpServers>(swipeDismiss = swipeDismiss) {
                 McpServersScreen(
                     onNavigate = { route -> pushRoute(route) },
@@ -1010,6 +1018,47 @@ fun AgentAppRoot(
                         destructive = true,
                         onCancel = { conversationDeleteTarget = null },
                         onConfirm = onConfirmDelete,
+                    )
+                }
+            }
+        }
+    }
+
+    conversationBatchDeleteTargets?.let { targets ->
+        val onConfirmBatchDelete: () -> Unit = {
+            targets.forEach { conversation ->
+                if ((backStack.lastOrNull() as? AppRoute.Browser)?.sessionKey == conversation.id) {
+                    navigator.popToHome()
+                }
+                agentState.deleteConversation(conversation.id)
+            }
+            conversationBatchDeleteTargets = null
+        }
+        when (LocalUiStyle.current) {
+            AppearanceUiStyle.COUI -> {
+                CouiConfirmDialog(
+                    visible = true,
+                    title = stringResource(R.string.conversation_delete_title),
+                    message = stringResource(R.string.conversation_delete_batch_message, targets.size),
+                    confirmText = stringResource(R.string.action_delete),
+                    destructive = true,
+                    onConfirm = onConfirmBatchDelete,
+                    onDismissRequest = { conversationBatchDeleteTargets = null },
+                )
+            }
+            AppearanceUiStyle.MIUIX -> {
+                WindowDialog(
+                    show = true,
+                    cornerRadius = DialogDefaults.CornerRadius,
+                    title = stringResource(R.string.conversation_delete_title),
+                    summary = stringResource(R.string.conversation_delete_batch_message, targets.size),
+                    onDismissRequest = { conversationBatchDeleteTargets = null },
+                ) {
+                    MiuixDialogActions(
+                        confirmText = stringResource(R.string.action_delete),
+                        destructive = true,
+                        onCancel = { conversationBatchDeleteTargets = null },
+                        onConfirm = onConfirmBatchDelete,
                     )
                 }
             }

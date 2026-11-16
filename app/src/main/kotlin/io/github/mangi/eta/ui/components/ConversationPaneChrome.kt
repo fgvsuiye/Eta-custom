@@ -44,6 +44,9 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -110,6 +113,7 @@ import com.itos.coui.backdrop.ProvideCouiBackdrop
 import com.itos.coui.backdrop.couiBackdrop
 import com.itos.coui.backdrop.drawCouiBackdrop
 import com.itos.coui.backdrop.rememberCouiBackdrop
+import com.itos.coui.dialog.CouiDialogDefaults
 import com.itos.coui.effect.CouiFloatingRenderer
 import com.itos.coui.effect.CouiFloatingSurface
 import com.itos.coui.effect.LocalCouiContourGlowEnabled
@@ -246,6 +250,129 @@ internal fun ConversationPaneTopBar(
     when (LocalUiStyle.current) {
         AppearanceUiStyle.COUI -> {
             val dark = CouiTheme.isDark
+            if (couiBackdrop != null) {
+                TopAppBarSurface(
+                    modifier = modifier.fillMaxWidth(),
+                    backdrop = couiBackdrop,
+                    gradientColor = containerColor,
+                    dark = dark,
+                ) {
+                    barContent()
+                }
+            } else {
+                Box(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.verticalGradient(
+                                0.0f to containerColor,
+                                0.8f to containerColor.copy(alpha = 0.94f),
+                                1.0f to Color.Transparent,
+                            ),
+                        ),
+                ) {
+                    barContent()
+                }
+            }
+        }
+        AppearanceUiStyle.MIUIX -> {
+            TopBarBackdrop(backdrop = miuixBackdrop) {
+                Box(modifier = modifier.fillMaxWidth()) {
+                    barContent()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ConversationSelectionBar(
+    checkedCount: Int,
+    allSelected: Boolean,
+    containerColor: Color,
+    couiBackdrop: CouiBackdrop?,
+    miuixBackdrop: LayerBackdrop?,
+    onSelectAllToggle: () -> Unit,
+    onDeleteSelected: () -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isCoui = LocalUiStyle.current == AppearanceUiStyle.COUI
+    val dark = if (isCoui) CouiTheme.isDark else MiuixTheme.colorScheme.surface.luminance() < 0.5f
+    val titleColor = if (isCoui) CouiPageDefaults.themeColors(dark).title else MiuixTheme.colorScheme.onSurface
+    val accentColor = if (isCoui) CouiTheme.colorScheme.accent else MiuixTheme.colorScheme.primary
+    val destructiveColor = if (isCoui) CouiDialogDefaults.themeColors().destructive else MiuixTheme.colorScheme.error
+    val closeLabel = stringResource(R.string.action_close)
+    val deleteLabel = stringResource(R.string.action_delete)
+    val selectAllLabel = stringResource(
+        if (allSelected) R.string.action_deselect_all else R.string.action_select_all,
+    )
+    val countLabel = stringResource(R.string.conversation_selection_count, checkedCount)
+
+    val barContent: @Composable () -> Unit = {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                )
+                .padding(horizontal = ConversationPanelMetrics.PaneHorizontalPadding)
+                .height(ConversationPanelMetrics.TopBarHeight),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClickLabel = closeLabel) { onClose() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = closeLabel,
+                    modifier = Modifier.size(22.dp),
+                    tint = titleColor,
+                )
+            }
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = countLabel,
+                style = MiuixTheme.textStyles.body1,
+                color = titleColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = selectAllLabel,
+                style = MiuixTheme.textStyles.body1,
+                color = accentColor,
+                maxLines = 1,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClickLabel = selectAllLabel) { onSelectAllToggle() }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+            Spacer(Modifier.width(2.dp))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClickLabel = deleteLabel) { onDeleteSelected() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Delete,
+                    contentDescription = deleteLabel,
+                    modifier = Modifier.size(22.dp),
+                    tint = destructiveColor,
+                )
+            }
+        }
+    }
+
+    when (LocalUiStyle.current) {
+        AppearanceUiStyle.COUI -> {
             if (couiBackdrop != null) {
                 TopAppBarSurface(
                     modifier = modifier.fillMaxWidth(),

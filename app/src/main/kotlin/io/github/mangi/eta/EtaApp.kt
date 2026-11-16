@@ -8,6 +8,7 @@ import android.os.Looper
 import io.github.mangi.eta.agent.skill.SkillRuntime
 import io.github.mangi.eta.agent.browser.BrowserSessionRegistry
 import io.github.mangi.eta.agent.device.RootAccess
+import io.github.mangi.eta.agent.github.GitHubAccountManager
 import io.github.mangi.eta.agent.terminal.TerminalRuntime
 import io.github.mangi.eta.config.Prefs
 import io.github.mangi.eta.core.AndroidAgentLogger
@@ -64,6 +65,7 @@ class EtaApp : Application(), XposedServiceHelper.OnServiceListener {
         io.github.mangi.eta.agent.model.AgentRequestSnapshot.init(this)
         ProviderRepository.init(this)
         McpServerRepository.init(this)
+        GitHubAccountManager.init(this)
         XposedServiceHelper.registerListener(this)
         applicationScope.launch {
             try {

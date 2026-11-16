@@ -555,6 +555,17 @@ private fun SettingsPageContent(
                     )
                     CouiIconDivider()
                     CouiPreference(
+                        title = stringResource(R.string.route_github_account),
+                        icon = {
+                            CouiSettingsIcon(
+                                Icons.Rounded.Code,
+                                SettingsIconColors.Blue,
+                            )
+                        },
+                        onClick = { onNavigate(AppRoute.GitHubAccount) },
+                    )
+                    CouiIconDivider()
+                    CouiPreference(
                         title = "角色",
                         icon = {
                             CouiSettingsIcon(
@@ -1043,6 +1054,16 @@ private fun SettingsPageContent(
                                 )
                             },
                             onClick = { onNavigate(AppRoute.McpServers) },
+                        )
+                        ArrowPreference(
+                            title = stringResource(R.string.route_github_account),
+                            startAction = {
+                                SettingsIcon(
+                                    icon = Icons.Rounded.Code,
+                                    tint = SettingsIconColors.Blue,
+                                )
+                            },
+                            onClick = { onNavigate(AppRoute.GitHubAccount) },
                         )
                         ArrowPreference(
                             title = "角色",

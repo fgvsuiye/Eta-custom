@@ -35,6 +35,11 @@
   <string name="action_confirm">Confirm</string>
   <string name="action_close">Close</string>
   <string name="action_delete">Delete</string>
+  <string name="action_multi_select">Select multiple</string>
+  <string name="action_select_all">Select all</string>
+  <string name="action_deselect_all">Deselect all</string>
+  <string name="conversation_selection_count">Selected %1$d conversations</string>
+  <string name="conversation_delete_batch_message">The %1$d selected conversations and their messages will be permanently deleted.</string>
   <string name="action_save">Save</string>
   <string name="action_retry">Retry</string>
   <string name="action_continue">Continue</string>
@@ -1157,6 +1162,7 @@
   <string name="injected_image_cache_limit">Image reference data is too large to cache safely. Choose the images again or use remote image links</string>
   <string name="injected_image_unreadable">Some images could not be read. Choose the images again and retry</string>
   <string name="route_mcp_servers">MCP servers</string>
+  <string name="route_github_account">GitHub account</string>
   <string name="route_mcp_server_detail">MCP server</string>
   <string name="mcp_add_server">Add server</string>
   <string name="mcp_configured_servers">Servers · %1$d</string>

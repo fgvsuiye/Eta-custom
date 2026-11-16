@@ -38,6 +38,11 @@
   <string name="action_confirm">確認</string>
   <string name="action_close">關閉</string>
   <string name="action_delete">刪除</string>
+  <string name="action_multi_select">多選</string>
+  <string name="action_select_all">全選</string>
+  <string name="action_deselect_all">取消全選</string>
+  <string name="conversation_selection_count">已選 %1$d 個會話</string>
+  <string name="conversation_delete_batch_message">將刪除所選的 %1$d 個會話及其訊息，刪除後無法復原。</string>
   <string name="action_save">儲存</string>
   <string name="action_retry">重試</string>
   <string name="action_continue">繼續</string>
@@ -1129,6 +1134,7 @@
   <string name="injected_image_cache_limit">圖片參照資料過大，無法安全暫存，請重新選擇圖片或使用遠端圖片連結</string>
   <string name="injected_image_unreadable">無法讀取要求中的所有圖片，請重新選擇圖片後再試</string>
   <string name="route_mcp_servers">MCP 伺服器</string>
+  <string name="route_github_account">GitHub 帳號</string>
   <string name="route_mcp_server_detail">MCP 伺服器</string>
   <string name="mcp_add_server">新增伺服器</string>
   <string name="mcp_configured_servers">伺服器 · %1$d</string>
