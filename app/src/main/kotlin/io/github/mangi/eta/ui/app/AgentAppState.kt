@@ -612,7 +612,7 @@ internal class AgentAppState(
 
         if (!runStore.register(runId, conversationId, observed = false)) return false
         updateConversation(conversationId, existing.copy(isStreaming = true, isCompacting = checkpoint.operation == AgentRuntimeWire.OP_COMPACT))
-        restoreRunEvents(runId, checkpoint.events)
+        restoreRunEvents(runId, checkpoint.events, replayEpochMs = checkpoint.updatedAt)
         flushPendingRunDelta(runId)
         updateRunTrace(runId) { messages ->
             val finalizedThinking = runMessageProjector.finalizeThinking(runId, messages)
@@ -667,7 +667,7 @@ internal class AgentAppState(
             val client = AgentRuntimeClient(appContext, AndroidAgentLogger)
             val outcome = client.attachRun(
                 runId = runId,
-                onReplay = { events -> restoreRunEvents(runId, events) },
+                onReplay = { events -> restoreRunEvents(runId, events, replayEpochMs = System.currentTimeMillis()) },
                 onEvent = { event -> enqueueRunEvent(runId, event) },
             )
             when (outcome) {
@@ -1309,12 +1309,43 @@ internal class AgentAppState(
 
     fun steerQueuedMessage(id: String) {
         if (!homeState.isConversationLoaded) return
-        val (nextState, promoted) = AgentMessageQueueReducer.promoteToInterrupt(homeState, id)
-        if (promoted == null) return
-        updateCurrentConversation(nextState, updateTimestamp = false)
-        if (nextState.isStreaming && !nextState.isCompacting) {
-            requestInterruptCurrentRun()
-        } else if (!nextState.isStreaming) {
+        val target = homeState.queuedMessages.firstOrNull { it.id == id } ?: return
+        if (homeState.isStreaming && !homeState.isCompacting) {
+            if (target.pendingImages.isNotEmpty()) {
+                val headState = AgentMessageQueueReducer.promoteToQueueHead(homeState, id)
+                if (headState !== homeState) {
+                    updateCurrentConversation(headState, updateTimestamp = false)
+                }
+                Toast.makeText(
+                    appContext,
+                    appContext.getString(R.string.chat_queue_steer_images_deferred),
+                    Toast.LENGTH_SHORT,
+                ).show()
+                return
+            }
+            val fileReferences = target.pendingFileReferences.map { it.reference }
+            if (
+                !AgentFileReferencePolicy.canSend(
+                    references = fileReferences,
+                    terminalToolsEnabled = agentBooleanForUi(Prefs.Keys.AGENT_TERMINAL_TOOLS) &&
+                        (Prefs.isToolEnabled("read_file") || Prefs.isToolEnabled("terminal")),
+                )
+            ) {
+                Toast.makeText(
+                    appContext,
+                    appContext.getString(R.string.state_ui_file_path_reference_requires_opening_the_termina_deca4c),
+                    Toast.LENGTH_SHORT,
+                ).show()
+                return
+            }
+            val (nextState, promoted) = AgentMessageQueueReducer.promoteToInterrupt(homeState, id)
+            if (promoted == null) return
+            updateCurrentConversation(nextState, updateTimestamp = false)
+            steerToActiveRun(selectedConversationId, promoted)
+        } else if (!homeState.isStreaming) {
+            val (nextState, promoted) = AgentMessageQueueReducer.promoteToInterrupt(homeState, id)
+            if (promoted == null) return
+            updateCurrentConversation(nextState, updateTimestamp = false)
             dispatchQueuedMessage(selectedConversationId, promoted)
         }
     }
@@ -1385,14 +1416,26 @@ internal class AgentAppState(
                 content = prompt,
                 pendingImages = pendingImages,
                 pendingFileReferences = pendingFileReferences,
-                immediateInterrupt = immediateInterrupt,
+                immediateInterrupt = immediateInterrupt && pendingImages.isEmpty(),
             )
+            if (immediateInterrupt && pendingImages.isNotEmpty()) {
+                updateCurrentConversation(
+                    state = AgentMessageQueueReducer.enqueueAtHead(homeState, queued),
+                    updateTimestamp = false,
+                )
+                Toast.makeText(
+                    appContext,
+                    appContext.getString(R.string.chat_queue_steer_images_deferred),
+                    Toast.LENGTH_SHORT,
+                ).show()
+                return
+            }
             updateCurrentConversation(
                 state = AgentMessageQueueReducer.enqueue(homeState, queued),
                 updateTimestamp = false,
             )
             if (immediateInterrupt) {
-                requestInterruptCurrentRun()
+                steerToActiveRun(selectedConversationId, queued)
             }
             return
         }
@@ -1421,6 +1464,55 @@ internal class AgentAppState(
             pendingFileReferences = pendingFileReferences,
             editBoundary = editBoundary,
         )
+    }
+
+    private fun steerToActiveRun(
+        conversationId: String?,
+        item: QueuedMessageUi,
+    ) {
+        val targetConversationId = conversationId ?: return
+        fun demoteToQueueHead() {
+            val current = conversationsById[targetConversationId] ?: return
+            val demoted = AgentMessageQueueReducer.clearInterruptFlag(current, item.id)
+            if (demoted !== current) {
+                updateConversation(targetConversationId, demoted, updateTimestamp = false)
+            }
+        }
+        val activeRunId = runStore.activeRunId(targetConversationId)
+        val steerPrompt = AgentFileReferencePromptCodec.format(
+            item.content,
+            item.pendingFileReferences.map { it.reference },
+        ).trim()
+        if (activeRunId == null || steerPrompt.isBlank()) {
+            demoteToQueueHead()
+            return
+        }
+        scope.launch(Dispatchers.IO) {
+            val outcome = AgentRuntimeClient(appContext, AndroidAgentLogger).steerRun(activeRunId, steerPrompt)
+            withContext(Dispatchers.Main) {
+                val current = conversationsById[targetConversationId] ?: return@withContext
+                if (current.queuedMessages.none { it.id == item.id }) return@withContext
+                when (outcome) {
+                    is AgentRuntimeClient.SteerOutcome.Accepted -> {
+                        val updated = AgentMessageQueueReducer.remove(current, item.id)
+                        if (updated !== current) {
+                            updateConversation(targetConversationId, updated, updateTimestamp = false)
+                        }
+                        if (outcome.supplementIndex > 0) {
+                            insertSupplementMessage(
+                                runId = activeRunId,
+                                index = outcome.supplementIndex,
+                                text = steerPrompt,
+                                persist = true,
+                            )
+                        }
+                    }
+                    AgentRuntimeClient.SteerOutcome.Rejected,
+                    AgentRuntimeClient.SteerOutcome.Unavailable,
+                    -> demoteToQueueHead()
+                }
+            }
+        }
     }
 
     private fun dispatchQueuedMessage(
@@ -1524,11 +1616,13 @@ internal class AgentAppState(
             messages = messages,
             state = if (preserveCurrentDraft) {
                 state.copy(
+                    history = history,
                     journal = editBoundary?.journalPrefix ?: state.journal,
                     messageEdit = null,
                 )
             } else {
                 state.copy(
+                    history = history,
                     journal = editBoundary?.journalPrefix ?: state.journal,
                     input = "",
                     pendingImages = emptyList(),
@@ -1705,7 +1799,10 @@ internal class AgentAppState(
             history = boundary.historyPrefix,
             userHistoryMessage = userHistoryMessage,
             messages = homeState.messages.take(boundary.userMessageIndex + 1),
-            state = homeState.copy(journal = boundary.journalPrefix),
+            state = homeState.copy(
+                history = boundary.historyPrefix,
+                journal = boundary.journalPrefix,
+            ),
             reasoningEffort = homeState.reasoningEffort,
         )
     }
@@ -2242,11 +2339,6 @@ internal class AgentAppState(
         requestCancelRun(runId, byUser = true)
     }
 
-    private fun requestInterruptCurrentRun() {
-        val runId = runStore.activeRunId(selectedConversationId) ?: return
-        requestCancelRun(runId)
-    }
-
     private fun requestCancelRun(runId: String, byUser: Boolean = false) {
         if (!runStore.requestStop(runId, byUser)) return
         scope.launch(Dispatchers.IO) {
@@ -2257,7 +2349,11 @@ internal class AgentAppState(
     private fun isReplyRewrite(runId: String): Boolean =
         conversationsById[conversationIdForRun(runId)]?.roleplayMessages?.pendingRewrites?.containsKey(runId) == true
 
-    private fun restoreRunEvents(runId: String, events: List<AgentEvent>) {
+    private fun restoreRunEvents(
+        runId: String,
+        events: List<AgentEvent>,
+        replayEpochMs: Long? = null,
+    ) {
         if (isReplyRewrite(runId)) return
         // 恢复是完整快照：先清除同一 run 的旧投影，再一次发布，避免历史增量重复追加
         // 或中途的 Running 状态使已结束的思考重新展开、播放动画。
@@ -2271,7 +2367,9 @@ internal class AgentAppState(
                         .mapTo(mutableSetOf()) { it.index },
                 )
             }
-            events.forEach { event -> applyRunEvent(runId, event, persistSupplement = false) }
+            events.forEach { event ->
+                applyRunEvent(runId, event, persistSupplement = false, replayEpochMs = replayEpochMs)
+            }
         }
     }
 
@@ -2287,6 +2385,7 @@ internal class AgentAppState(
         runId: String,
         event: AgentEvent,
         persistSupplement: Boolean = true,
+        replayEpochMs: Long? = null,
     ) {
         if (isReplyRewrite(runId)) {
             if (event is AgentEvent.RunStarted && runStore.isStopRequested(runId)) scope.launch(Dispatchers.IO) {
@@ -2308,9 +2407,11 @@ internal class AgentAppState(
             is AgentEvent.AssistantBlockDelta,
             is AgentEvent.SubagentProgress,
             -> updateMessages(runId, updateTimestamp = false) { messages ->
-                runMessageProjector.applyEvent(runId, event, messages)
+                runMessageProjector.applyEvent(runId, event, messages, replayEpochMs = replayEpochMs)
             }
-            else -> updateRunTrace(runId) { messages -> runMessageProjector.applyEvent(runId, event, messages) }
+            else -> updateRunTrace(runId) { messages ->
+                runMessageProjector.applyEvent(runId, event, messages, replayEpochMs = replayEpochMs)
+            }
         }
     }
 
@@ -2514,17 +2615,12 @@ internal class AgentAppState(
         persist: Boolean = true,
     ) {
         updateMessages(runId) { messages ->
-            AgentPendingResultRecovery.mergeSupplements(
-                runId = runId,
-                supplements = listOf(
-                    AgentUiHandoffPayload.Supplement(
-                        index = index,
-                        text = text,
-                        createdAt = System.currentTimeMillis(),
-                    )
-                ),
-                messages = messages,
-            )
+            val id = AgentPendingResultRecovery.supplementMessageId(runId, index)
+            if (messages.any { it.id == id }) {
+                messages
+            } else {
+                messages + UserMessageUi(id = id, content = text)
+            }
         }
         refreshConversationSummaries()
         if (persist) persistConversations()
