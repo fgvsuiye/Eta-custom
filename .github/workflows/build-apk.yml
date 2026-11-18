@@ -62,9 +62,9 @@ jobs:
           body: |
             # Eta-custom ${{ github.ref_name }}
 
-            上游 [Mangi-11/Eta](https://github.com/Mangi-11/Eta) **3.4.4** 基座，保留三项定制功能：**提示词与工具边界、会话列表多选、GitHub 账号连接**。其余功能与上游最新版完全一致。
+            本仓库是 [Mangi-11/Eta](https://github.com/Mangi-11/Eta) 的个人定制版：提示词与工具边界、GitHub 账号连接移植自 [Oo0520/Eta-por](https://github.com/Oo0520/Eta-por)，会话列表多选为本仓库自研。在上游最新 main 基础上每日自动跟随上游更新，除下述内容外与上游完全一致。
 
-            ## 定制内容
+            ## 本地修改
 
             **提示词工作台**（设置 → 提示词工作台）
 
@@ -84,13 +84,13 @@ jobs:
 
             - MEMORY.md 缺少「# 核心记忆」标题时取文件头部注入，不再静默空注入
 
-            **会话列表多选**（custom.2 新增）
+            **会话列表多选**
 
             - 长按任意会话进入多选模式，行首勾选框
             - 顶栏操作条：已选计数 / 全选（跟随搜索过滤）/ 批量删除 / 退出
             - 删除前统一确认；运行中的会话先停任务再删；COUI 与 MIUIX 均支持
 
-            **GitHub 账号连接**（custom.2 新增，移植自 Eta-por）
+            **GitHub 账号连接**（移植自 Eta-por）
 
             - 设置 → GitHub 账号：设备码授权一键登录，无需手动建 PAT
             - token 经 Android Keystore 加密只存本机，断开即清除
@@ -102,7 +102,7 @@ jobs:
             - 需 Android 13+ ARM64 设备（minSdk 33）
             - 包名与上游正式版相同（io.github.mangi.eta）但签名不同：装过官方正式版需先卸载再装本版
             - 与官方 beta（io.github.mangi.eta.beta）可共存
-            - 出问题先到上游官方版复现：仅提示词工作台、会话多选、GitHub 账号相关界面/行为属于本仓库定制，其余一切与上游一致
+            - 出问题先到上游官方版复现：仅上述本地修改相关界面/行为属于本仓库，其余一切与上游一致
 
             ## 更新方式
 
