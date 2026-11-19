@@ -130,6 +130,8 @@ android {
         unitTests.isIncludeAndroidResources = true
         // Robolectric 在高版本 JDK 下需要访问内部 API，参数只作用于测试 JVM。
         unitTests.all {
+            // 备份流测试含 17MB 超大消息回环；定制树比上游多出移植测试，512MB 默认堆会 OOM。
+            it.maxHeapSize = "2g"
             it.jvmArgs(
                 "--add-opens=java.base/java.lang=ALL-UNNAMED",
                 "--add-opens=java.base/java.util=ALL-UNNAMED",
