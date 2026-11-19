@@ -924,7 +924,7 @@ private fun ConversationHistoryRow(
                     ) {
                         GlassPopupItem(
                             text = multiSelectText,
-                            icon = MiuixIcons.Glass.Check,
+                            icon = MiuixIcons.Glass.Ok,
                             onClick = {
                                 showActionMenu = false
                                 onEnterMultiSelect()
