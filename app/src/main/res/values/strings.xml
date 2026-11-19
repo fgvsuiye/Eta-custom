@@ -1431,6 +1431,11 @@
   <string name="speech_recognition_disabled_note">保存后隐藏聊天和助手浮窗中的麦克风入口。全局唤醒会在入场动画结束后打开文字输入和键盘，可使用输入法自带的语音输入。原服务配置会保留。</string>
   <string name="web_tools_settings_title">网页搜索与读取</string>
   <string name="web_tools_configure_action">配置服务</string>
+  <string name="image_gen_settings_title">AI 生图</string>
+  <string name="image_gen_gallery_title">已生成图片</string>
+  <string name="image_gen_configure_action">配置生图</string>
+  <string name="tool_generate_image">AI 生图</string>
+  <string name="tool_generate_image_description">使用已配置的生图模型根据文字描述创作图片，或基于参考图进行图像编辑与风格迁移。</string>
   <string name="web_tools_group_service">服务</string>
   <string name="web_tools_search_service">网页搜索</string>
   <string name="web_tools_fetch_service">网页读取</string>
@@ -1920,4 +1925,19 @@
   <string name="subagent_settings_name_exists">A custom Subagent named “%1$s” already exists. Choose a different name.</string>
   <string name="subagent_settings_delete_title">Delete Subagent</string>
   <string name="subagent_settings_delete_confirm">Delete custom Subagent “%1$s”? Its agents/%1$s.md file will be removed and cannot be undone.</string>
+  <string name="route_scheduled_tasks">Scheduled Tasks</string>
+  <string name="route_scheduled_task_detail">Task Details</string>
+  <string name="route_scheduled_task_new">New Scheduled Task</string>
+  <string name="route_scheduled_task_edit">Edit Scheduled Task</string>
+  <string name="scheduled_notification_channel_results">Scheduled task results</string>
+  <string name="scheduled_notification_channel_results_desc">Summaries and updates delivered by Eta scheduled tasks</string>
+  <string name="scheduled_notification_channel_alerts">Scheduled task alerts</string>
+  <string name="scheduled_notification_channel_alerts_desc">Failures, auto-pause alerts, and actions awaiting unlock</string>
+  <string name="scheduled_notification_completed_fallback">Scheduled task completed. Tap to view full conversation.</string>
+  <string name="scheduled_notification_failed_title">Task failed: %1$s</string>
+  <string name="scheduled_notification_auto_disabled_title">Task paused: %1$s</string>
+  <string name="scheduled_notification_failed_fallback">Execution failed. Tap to inspect details.</string>
+  <string name="scheduled_notification_gui_ready_title">Ready to run: %1$s</string>
+  <string name="scheduled_action_run_now">Run now</string>
+  <string name="scheduled_action_stop">Stop</string>
 </resources>

@@ -262,7 +262,11 @@ internal fun ProviderModelsTab(
                 if (ProviderAuthModes.isOAuth(provider.authMode)) {
                     val sync = ModelRepository.syncRemoteCatalog(catalog)
                     RuntimeConfigRepository.syncToRemotePreferences(EtaApp.serviceInstance)
-                    message = "已同步 ${sync.fetchedCount} 个远端模型"
+                    message = context.resources.getQuantityString(
+                        R.plurals.provider_i18n_synced_remote_models,
+                        sync.fetchedCount,
+                        sync.fetchedCount,
+                    )
                     return@launch
                 }
                 val candidates = ModelRepository.newRemoteModels(provider.id, catalog.models)
@@ -307,6 +311,16 @@ internal fun ProviderModelsTab(
         { scrollState?.overscrollOffset = it }
     }
 
+    val modelListTitle = if (normalizedModelSearchQuery.isBlank()) {
+        stringResource(R.string.provider_model_list_count, provider.models.size)
+    } else {
+        stringResource(
+            R.string.provider_model_list_matches,
+            filteredModels.size,
+            provider.models.size,
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
@@ -332,8 +346,9 @@ internal fun ProviderModelsTab(
                         fadeOut(selectionFade()),
                 ) {
                     ProviderSection(title = stringResource(R.string.ui_model_management_183414)) {
-                        val pullTitle = if (isFetching) context.getString(R.string.page_retrieving_a880c9)
-                        else context.getString(R.string.page_automatically_pull_from_remote_f883d0)
+                        val pullTitle = stringResource(
+                            if (isFetching) R.string.page_retrieving_a880c9 else R.string.page_automatically_pull_from_remote_f883d0,
+                        )
                         val pullSummary = stringResource(R.string.provider_models_endpoint_summary, provider.baseUrl)
                         val customTitle = stringResource(R.string.ui_add_custom_model_a5ddc0)
                         val customSummary = stringResource(R.string.ui_manually_fill_in_the_display_name_and_model_id_077a7b)
@@ -365,11 +380,12 @@ internal fun ProviderModelsTab(
                                 onClick = onOpenAddCustomModel,
                             )
                         }
+                        val failPrefix = stringResource(R.string.page_fail_3e3c80)
                         message?.let {
                             Text(
                                 text = it,
                                 style = MiuixTheme.textStyles.footnote2,
-                                color = if (it.startsWith(context.getString(R.string.page_fail_3e3c80))) StatusError else StatusSuccess,
+                                color = if (it.startsWith(failPrefix)) StatusError else StatusSuccess,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                             )
                         }
@@ -400,15 +416,6 @@ internal fun ProviderModelsTab(
                 }
             }
 
-            val modelListTitle = if (normalizedModelSearchQuery.isBlank()) {
-                context.getString(R.string.provider_model_list_count, provider.models.size)
-            } else {
-                context.getString(
-                    R.string.provider_model_list_matches,
-                    filteredModels.size,
-                    provider.models.size,
-                )
-            }
             if (provider.models.isEmpty() || filteredModels.isEmpty()) {
                 item(key = "models_empty", contentType = "empty") {
                     ProviderSection(
@@ -419,11 +426,13 @@ internal fun ProviderModelsTab(
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                text = if (provider.models.isEmpty()) {
-                                    context.getString(R.string.page_there_is_no_model_yet_please_pull_it_from_the_remote_ced865)
-                                } else {
-                                    context.getString(R.string.page_no_matching_model_found_ae7e96)
-                                },
+                                text = stringResource(
+                                    if (provider.models.isEmpty()) {
+                                        R.string.page_there_is_no_model_yet_please_pull_it_from_the_remote_ced865
+                                    } else {
+                                        R.string.page_no_matching_model_found_ae7e96
+                                    },
+                                ),
                                 style = MiuixTheme.textStyles.body2,
                                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                             )
@@ -574,6 +583,7 @@ internal fun ProviderModelsTab(
         ModelEditDialog(
             show = editingModel != null,
             nativeGemini = provider is GeminiProviderSetting,
+            vertexGemini = (provider as? GeminiProviderSetting)?.isVertexAi == true,
             model = activeEditingModel,
             isNew = isCreatingModel,
             isSaving = isMutatingModel,
@@ -613,7 +623,7 @@ internal fun ProviderModelsTab(
     }
 
     val activeDeleteModel = modelPendingDelete ?: retainedModelPendingDelete
-    val deleteConfirmText = if (isMutatingModel) context.getString(R.string.page_deleting_6f941d) else context.getString(R.string.page_delete_3755f5)
+    val deleteConfirmText = stringResource(if (isMutatingModel) R.string.page_deleting_6f941d else R.string.page_delete_3755f5)
     val onConfirmDeleteModel: (Model) -> Unit = { model ->
         scope.launch {
             isMutatingModel = true
@@ -636,7 +646,7 @@ internal fun ProviderModelsTab(
         }
     }
 
-    val batchConfirmText = if (isMutatingModel) context.getString(R.string.page_deleting_6f941d) else context.getString(R.string.page_delete_3755f5)
+    val batchConfirmText = stringResource(if (isMutatingModel) R.string.page_deleting_6f941d else R.string.page_delete_3755f5)
     val batchSummary = pluralStringResource(
         R.plurals.provider_selected_delete_summary,
         selectedModelIds.size,
@@ -968,6 +978,7 @@ private fun ModelListItem(
 private fun ModelEditDialog(
     show: Boolean,
     nativeGemini: Boolean,
+    vertexGemini: Boolean,
     model: Model,
     isNew: Boolean,
     isSaving: Boolean,
@@ -977,12 +988,18 @@ private fun ModelEditDialog(
     onSubmit: (Model) -> Unit,
     onDelete: (() -> Unit)?,
 ) {
-    val context = LocalContext.current
-    val initialCapabilities = if (nativeGemini) GeminiModelCapabilities.resolveReasoning(model)
-        else model.effectiveReasoningCapabilities
-    val availableEfforts = if (nativeGemini) GeminiModelCapabilities.configurableEfforts else editableReasoningEfforts
+    val initialCapabilities = when {
+        vertexGemini -> GeminiModelCapabilities.resolveVertexReasoning(model)
+        nativeGemini -> GeminiModelCapabilities.resolveReasoning(model)
+        else -> model.effectiveReasoningCapabilities
+    }
     var displayName by remember(model.id, isNew) { mutableStateOf(model.displayName) }
     var modelId by remember(model.id, isNew) { mutableStateOf(model.modelId) }
+    val availableEfforts = when {
+        vertexGemini -> GeminiModelCapabilities.requestReasoningCapabilities(modelId).supportedEfforts
+        nativeGemini -> GeminiModelCapabilities.configurableEfforts
+        else -> editableReasoningEfforts
+    }
     var contextWindowOverrideText by remember(model.id, isNew) {
         // 早先拉取、未写入窗口的模型也带着远端标注，打开编辑时直接预填。
         mutableStateOf((model.contextWindowOverride ?: model.contextWindow)?.toString().orEmpty())
@@ -1046,22 +1063,35 @@ private fun ModelEditDialog(
         },
     )
 
-    val dialogTitle = if (isNew) context.getString(R.string.page_add_model_532a64) else context.getString(R.string.page_edit_model_29e31e)
-    val confirmText = if (isSaving) context.getString(R.string.page_saving_d70d42) else context.getString(R.string.page_save_fadf24)
+    val dialogTitle = stringResource(if (isNew) R.string.page_add_model_532a64 else R.string.page_edit_model_29e31e)
+    val confirmText = stringResource(if (isSaving) R.string.page_saving_d70d42 else R.string.page_save_fadf24)
+    val modelIdError = if (vertexGemini && modelId.isNotBlank() && !GeminiModelCapabilities.isGemini4(modelId)) {
+        stringResource(R.string.provider_i18n_vertex_gemini4_only)
+    } else null
     val confirmEnabled = !isSaving &&
         displayName.isNotBlank() &&
         modelId.isNotBlank() &&
+        modelIdError == null &&
         contextError == null
     val contextValue = contextWindowOverrideText.toIntOrNull()
-    val thinkingTitle = if (nativeGemini) "配置思考档位" else stringResource(R.string.ui_support_thinking_5b9e4c)
+    val thinkingTitle = stringResource(
+        if (nativeGemini) R.string.provider_i18n_gemini_thinking_levels else R.string.ui_support_thinking_5b9e4c,
+    )
     val thinkingSummary = if (nativeGemini) {
-        "关闭时仅使用 Default，不发送档位参数；不会关闭模型自身的思考。"
+        stringResource(R.string.provider_i18n_gemini_thinking_summary)
     } else if (reasoningOverrideActive) {
         stringResource(R.string.page_covered_model_automatic_capabilities_3fa7d4)
     } else {
         stringResource(if (model.reasoning == true) R.string.provider_auto_reasoning_detected
             else R.string.provider_auto_reasoning_unknown)
     }
+    val effortHelp = stringResource(
+        when {
+            vertexGemini -> R.string.provider_i18n_vertex_effort_help
+            nativeGemini -> R.string.provider_i18n_gemini_effort_help
+            else -> R.string.ui_only_check_the_ranges_actually_supported_by_the_mode_2c343d
+        },
+    )
 
     when (LocalUiStyle.current) {
         AppearanceUiStyle.COUI -> {
@@ -1202,15 +1232,14 @@ private fun ModelEditDialog(
                                 }
                             }
                             CouiText(
-                                text = if (nativeGemini) "可手动选择档位，是否支持由服务端校验。Default 始终可用。"
-                                else stringResource(R.string.ui_only_check_the_ranges_actually_supported_by_the_mode_2c343d),
+                                text = effortHelp,
                                 kind = CouiTextKind.GroupFooter,
                                 color = colors.summary,
                             )
                         }
                     }
 
-                    error?.let { message ->
+                    (modelIdError ?: error)?.let { message ->
                         CouiText(
                             text = message,
                             kind = CouiTextKind.GroupFooter,
@@ -1394,13 +1423,12 @@ private fun ModelEditDialog(
                             }
                         }
                         Text(
-                            text = if (nativeGemini) "可手动选择档位，是否支持由服务端校验。Default 始终可用。"
-                            else stringResource(R.string.ui_only_check_the_ranges_actually_supported_by_the_mode_2c343d),
+                            text = effortHelp,
                             style = MiuixTheme.textStyles.footnote2,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                             modifier = Modifier.padding(start = 4.dp, top = 8.dp),
                         )
-                        error?.let { message ->
+                        (modelIdError ?: error)?.let { message ->
                             Text(
                                 text = message,
                                 style = MiuixTheme.textStyles.footnote2,
@@ -1457,17 +1485,14 @@ private fun ModelEditDialog(
 }
 
 @Composable
-private fun capabilityTags(model: Model): List<String> {
-    val context = LocalContext.current
-    return buildList {
+private fun capabilityTags(model: Model): List<String> = buildList {
     add(
         model.effectiveContextWindow?.let { contextWindow ->
             stringResource(
                 R.string.provider_context_tag,
                 formatCompactTokenCount(contextWindow),
             )
-        } ?: context.getString(R.string.page_context_unknown_b6ae7b)
+        } ?: stringResource(R.string.page_context_unknown_b6ae7b)
     )
-    if (model.supportsReasoning) add(context.getString(R.string.page_support_thinking_5b9e4c))
-    }
+    if (model.supportsReasoning) add(stringResource(R.string.page_support_thinking_5b9e4c))
 }

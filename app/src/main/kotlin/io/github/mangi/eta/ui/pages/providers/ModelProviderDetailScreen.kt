@@ -45,6 +45,7 @@ import com.itos.coui.text.CouiTextKind
 import com.itos.coui.text.Text as CouiText
 import io.github.mangi.eta.EtaApp
 import io.github.mangi.eta.R
+import io.github.mangi.eta.data.datastore.SettingsDataStore
 import io.github.mangi.eta.data.model.AnthropicProviderSetting
 import io.github.mangi.eta.data.model.AppearanceUiStyle
 import io.github.mangi.eta.data.model.CustomProviderSetting
@@ -54,6 +55,7 @@ import io.github.mangi.eta.data.model.OpenAiEndpointMode
 import io.github.mangi.eta.data.model.ProviderSetting
 import io.github.mangi.eta.data.model.withId
 import io.github.mangi.eta.data.model.withModels
+import io.github.mangi.eta.data.provider.BuiltinProviders
 import io.github.mangi.eta.data.provider.OfficialModelCatalog
 import io.github.mangi.eta.data.repository.ProviderRepository
 import io.github.mangi.eta.data.repository.RemoteModelFetcher
@@ -106,7 +108,6 @@ internal fun ModelProviderDetailScreen(
     newType: NewProviderType? = null,
     onBack: () -> Unit,
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val providers by ProviderRepository.providersFlow().collectAsState(initial = emptyList())
     var createdId by remember { mutableStateOf<String?>(null) }
@@ -189,17 +190,22 @@ internal fun ModelProviderDetailScreen(
 
     val initial = provider ?: draft!!
     val isNew = provider == null
+    val providerDisplayName = BuiltinProviders.defaultNameRes(initial.id, initial.name)?.let { stringResource(it) } ?: initial.name
     var currentTab by remember { mutableIntStateOf(0) }
     var configDraft by rememberSaveable(
         initial.id,
         stateSaver = ProviderConfigDraftSaver,
     ) {
-        mutableStateOf(ProviderConfigDraft.from(initial))
+        mutableStateOf(
+            ProviderConfigDraft.from(initial).let { base ->
+                if (isNew) base else base.copy(name = providerDisplayName)
+            },
+        )
     }
-    val title = if (isNew) context.getString(R.string.page_create_new_provider_36cab9) else initial.name
+    val title = if (isNew) stringResource(R.string.page_create_new_provider_36cab9) else providerDisplayName
     val tabs = listOf(
-        context.getString(R.string.page_configuration_d7d7ce),
-        context.getString(R.string.page_model_98fd0c),
+        stringResource(R.string.page_configuration_d7d7ce),
+        stringResource(R.string.page_model_98fd0c),
     )
 
     when (LocalUiStyle.current) {
@@ -585,17 +591,22 @@ private fun ProviderConfigTab(
         }
 
         item(key = "actions") {
-            val saveText = when {
-                isWorking -> context.getString(R.string.page_saving_d70d42)
-                creationCommitted -> context.getString(R.string.page_created_62cfc5)
-                isNew -> context.getString(R.string.page_create_fcbd09)
-                else -> context.getString(R.string.page_save_configuration_817af1)
-            }
-            val removeText = if (provider.isBuiltIn) {
-                context.getString(R.string.page_reset_built_in_configuration_35b6ec)
-            } else {
-                context.getString(R.string.page_remove_provider_9f848f)
-            }
+            val saveText = stringResource(
+                when {
+                    isWorking -> R.string.page_saving_d70d42
+                    creationCommitted -> R.string.page_created_62cfc5
+                    isNew -> R.string.page_create_fcbd09
+                    else -> R.string.page_save_configuration_817af1
+                },
+            )
+            val removeText = stringResource(
+                if (provider.isBuiltIn) {
+                    R.string.page_reset_built_in_configuration_35b6ec
+                } else {
+                    R.string.page_remove_provider_9f848f
+                },
+            )
+            val failPrefix = stringResource(R.string.page_fail_3e3c80)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -650,7 +661,7 @@ private fun ProviderConfigTab(
                     Text(
                         text = message,
                         style = MiuixTheme.textStyles.footnote2,
-                        color = if (message.startsWith(context.getString(R.string.page_fail_3e3c80))) StatusError else StatusSuccess,
+                        color = if (message.startsWith(failPrefix)) StatusError else StatusSuccess,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 8.dp),
                     )
@@ -667,7 +678,8 @@ private fun ProviderConfigTab(
         }
     }
 
-    val deleteConfirmText = if (isWorking) context.getString(R.string.page_deleting_6f941d) else context.getString(R.string.page_delete_3755f5)
+    val providerDisplayName = BuiltinProviders.defaultNameRes(provider.id, provider.name)?.let { stringResource(it) } ?: provider.name
+    val deleteConfirmText = stringResource(if (isWorking) R.string.page_deleting_6f941d else R.string.page_delete_3755f5)
     val onConfirmDelete: () -> Unit = {
         scope.launch {
             isWorking = true
@@ -689,7 +701,7 @@ private fun ProviderConfigTab(
             }
         }
     }
-    val resetConfirmText = if (isWorking) context.getString(R.string.page_resetting_616090) else context.getString(R.string.page_reset_3d8134)
+    val resetConfirmText = stringResource(if (isWorking) R.string.page_resetting_616090 else R.string.page_reset_3d8134)
     val onConfirmReset: () -> Unit = {
         scope.launch {
             isWorking = true
@@ -718,7 +730,7 @@ private fun ProviderConfigTab(
                 CouiConfirmDialog(
                     visible = true,
                     title = stringResource(R.string.ui_remove_provider_9f848f),
-                    message = stringResource(R.string.provider_delete_summary, provider.name),
+                    message = stringResource(R.string.provider_delete_summary, providerDisplayName),
                     confirmText = deleteConfirmText,
                     confirmEnabled = !isWorking,
                     cancelEnabled = !isWorking,
@@ -731,7 +743,7 @@ private fun ProviderConfigTab(
                 CouiConfirmDialog(
                     visible = true,
                     title = stringResource(R.string.ui_reset_built_in_configuration_35b6ec),
-                    message = stringResource(R.string.provider_reset_summary, provider.name),
+                    message = stringResource(R.string.provider_reset_summary, providerDisplayName),
                     confirmText = resetConfirmText,
                     confirmEnabled = !isWorking,
                     cancelEnabled = !isWorking,
@@ -747,7 +759,7 @@ private fun ProviderConfigTab(
                 show = showDeleteDialog,
                 backdrop = overlayBackdrop,
                 title = stringResource(R.string.ui_remove_provider_9f848f),
-                summary = stringResource(R.string.provider_delete_summary, provider.name),
+                summary = stringResource(R.string.provider_delete_summary, providerDisplayName),
                 onDismissRequest = { if (!isWorking) showDeleteDialog = false },
             ) {
                 MiuixDialogActions(
@@ -763,7 +775,7 @@ private fun ProviderConfigTab(
                 show = showResetDialog,
                 backdrop = overlayBackdrop,
                 title = stringResource(R.string.ui_reset_built_in_configuration_35b6ec),
-                summary = stringResource(R.string.provider_reset_summary, provider.name),
+                summary = stringResource(R.string.provider_reset_summary, providerDisplayName),
                 onDismissRequest = { if (!isWorking) showResetDialog = false },
             ) {
                 MiuixDialogActions(
@@ -784,14 +796,11 @@ private suspend fun testConnection(
     provider: ProviderSetting,
 ): String {
     if (provider is GeminiProviderSetting && provider.isVertexAi) {
-        return RemoteModelFetcher.testVertexConnection(provider)
-            .map { result ->
-                if (result.usedGlobalFallback) {
-                    "连接成功（已自动回退至 global 端点，验证模型：${result.modelId}）"
-                } else {
-                    "连接成功（已验证模型：${result.modelId}）"
-                }
-            }
+        val selectedModelId = RuntimeConfigRepository.cachedSelectedModelId()
+            ?.takeIf { selected -> provider.models.any { it.id == selected && it.isEnabled } }
+            ?: provider.id.takeIf(String::isNotBlank)?.let { SettingsDataStore.selectedModelIdForProvider(it) }
+        return RemoteModelFetcher.testVertexConnection(provider, preferredModelId = selectedModelId)
+            .map { modelId -> context.getString(R.string.provider_i18n_vertex_test_ok, modelId) }
             .getOrElse { throwable ->
                 context.getString(
                     R.string.provider_error,

@@ -22,9 +22,18 @@ internal object AgentPromptBuilder {
         roleplayContext: RoleplayRunContext? = null,
         executionContext: TerminalExecutionContext? = null,
         customization: PromptCustomization = PromptCustomization(),
+        extraSystemContext: String = "",
     ): JSONArray {
-        val messages = buildSystemMessages(config, skillContext, memoryContext, rootAvailable, roleplayContext, executionContext, customization)
-        val chatOnly = LocalToolProfileStore.current(config.providerId, config.model) == LocalToolProfile.CHAT
+        val messages = buildSystemMessages(
+            config,
+            skillContext,
+            memoryContext,
+            rootAvailable,
+            roleplayContext,
+            executionContext,
+            customization,
+            extraSystemContext,
+        )
         history.forEach { item ->
             runCatching { AgentConversationCodec.toJsonObject(item) }.getOrNull()?.let(messages::put)
         }
@@ -45,6 +54,7 @@ internal object AgentPromptBuilder {
         roleplayContext: RoleplayRunContext? = null,
         executionContext: TerminalExecutionContext? = null,
         customization: PromptCustomization = PromptCustomization(),
+        extraSystemContext: String = "",
     ): JSONArray {
         val messages = JSONArray()
         val custom = customization.takeIf { it.active }
@@ -206,6 +216,9 @@ internal object AgentPromptBuilder {
         val activeProfile = LocalToolProfileStore.current(config.providerId, config.model)
         if (activeProfile == LocalToolProfile.FULL || activeProfile == LocalToolProfile.LIGHT) {
             buildSkillSystemMessage(skillContext)?.let(messages::put)
+        }
+        if (extraSystemContext.isNotBlank()) {
+            messages.put(systemMessage(extraSystemContext))
         }
         custom?.let { value -> customInstructionsMessage(value) }?.let(messages::put)
         return messages

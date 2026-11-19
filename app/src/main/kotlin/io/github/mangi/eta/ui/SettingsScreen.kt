@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.ImportContacts
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Inventory2
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.SportsBar
 import androidx.compose.material.icons.rounded.SupportAgent
 import androidx.compose.material.icons.rounded.SwipeUp
@@ -80,8 +82,11 @@ import io.github.mangi.eta.config.PowerAssistantTarget
 import io.github.mangi.eta.config.Prefs
 import io.github.mangi.eta.core.ModuleConfig
 import io.github.mangi.eta.data.model.AppearanceUiStyle
+import io.github.mangi.eta.data.model.ImageGenSettings
 import io.github.mangi.eta.data.model.ReasoningEffort
 import io.github.mangi.eta.data.model.enabledModel
+import io.github.mangi.eta.data.provider.BuiltinProviders
+import io.github.mangi.eta.data.repository.ImageGenSettingsRepository
 import io.github.mangi.eta.data.repository.ProviderRepository
 import io.github.mangi.eta.data.repository.RuntimeConfigRepository
 import io.github.mangi.eta.data.update.AppLatestRelease
@@ -104,6 +109,7 @@ import io.github.mangi.eta.ui.components.coui.CouiSwitchPreference
 import io.github.mangi.eta.ui.components.currentGlassOverlayBackdrop
 import io.github.mangi.eta.ui.model.AgentModelPickerProjector
 import io.github.mangi.eta.ui.navigation.AppRoute
+import io.github.mangi.eta.ui.screens.imagegen.shortName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -255,7 +261,8 @@ private fun SettingsPageContent(
         selectedProvider?.models?.find { it.id == selectedModelId }
     }
     val providerSummary = selectedProvider?.let { provider ->
-        "${provider.name} / ${selectedModel?.displayName ?: stringResource(R.string.settings_model_not_selected)}"
+        val providerDisplayName = BuiltinProviders.defaultNameRes(provider.id, provider.name)?.let { stringResource(it) } ?: provider.name
+        "$providerDisplayName / ${selectedModel?.displayName ?: stringResource(R.string.settings_model_not_selected)}"
     } ?: stringResource(R.string.settings_not_configured)
 
     // prefs 绑定到 XposedService：service 到达时切换到 RemotePreferences（跨进程提交到
@@ -511,9 +518,7 @@ private fun SettingsPageContent(
         onDispose { EtaApp.removeServiceStateListener(listener) }
     }
     val powerAssistantTargets = PowerAssistantTarget.entries
-    val powerAssistantItems = remember(context) {
-        powerAssistantTargets.map { target -> target.displayName(context) }
-    }
+    val powerAssistantItems = powerAssistantTargets.map { target -> target.displayName() }
     val onPowerTargetSelect: (Int) -> Unit = { index ->
         val target = powerAssistantTargets.getOrNull(index)
         val targetPrefs = prefs
@@ -653,7 +658,7 @@ private fun SettingsPageContent(
                     )
                     CouiIconDivider()
                     CouiPreference(
-                        title = "Subagent",
+                        title = stringResource(R.string.ui_misc_route_subagents),
                         icon = { CouiSettingsIcon(Icons.Rounded.JoinLeft, SettingsIconColors.Blue) },
                         onClick = { onNavigate(AppRoute.Subagents) },
                     )
@@ -681,6 +686,17 @@ private fun SettingsPageContent(
                     )
                     CouiIconDivider()
                     CouiPreference(
+                        title = stringResource(R.string.route_scheduled_tasks),
+                        icon = {
+                            CouiSettingsIcon(
+                                Icons.Rounded.Schedule,
+                                SettingsIconColors.Blue,
+                            )
+                        },
+                        onClick = { onNavigate(AppRoute.ScheduledTasks) },
+                    )
+                    CouiIconDivider()
+                    CouiPreference(
                         title = stringResource(R.string.route_github_account),
                         icon = {
                             CouiSettingsIcon(
@@ -692,7 +708,7 @@ private fun SettingsPageContent(
                     )
                     CouiIconDivider()
                     CouiPreference(
-                        title = "角色",
+                        title = stringResource(R.string.conversation_dock_characters),
                         icon = {
                             CouiSettingsIcon(
                                 Icons.Rounded.SportsBar,
@@ -719,6 +735,20 @@ private fun SettingsPageContent(
                             )
                         },
                         onClick = { onNavigate(AppRoute.WebToolsSettings) },
+                    )
+                    CouiIconDivider()
+                    val imageGenSettings by remember { ImageGenSettingsRepository.settingsFlow() }
+                        .collectAsState(initial = ImageGenSettings())
+                    CouiPreference(
+                        title = stringResource(R.string.image_gen_settings_title),
+                        value = if (imageGenSettings.enabled) imageGenSettings.backend.shortName() else stringResource(R.string.ui_misc_not_enabled),
+                        icon = {
+                            CouiSettingsIcon(
+                                Icons.Rounded.Image,
+                                SettingsIconColors.Orange,
+                            )
+                        },
+                        onClick = { onNavigate(AppRoute.ImageGenSettings) },
                     )
                     CouiIconDivider()
                     SwitchPref(
@@ -1089,7 +1119,7 @@ private fun SettingsPageContent(
                             onClick = { onNavigate(AppRoute.Memory) },
                         )
                         ArrowPreference(
-                            title = "Subagent",
+                            title = stringResource(R.string.ui_misc_route_subagents),
                             startAction = { SettingsIcon(Icons.Rounded.JoinLeft) },
                             onClick = { onNavigate(AppRoute.Subagents) },
                         )
@@ -1104,12 +1134,17 @@ private fun SettingsPageContent(
                             onClick = { onNavigate(AppRoute.McpServers) },
                         )
                         ArrowPreference(
+                            title = stringResource(R.string.route_scheduled_tasks),
+                            startAction = { SettingsIcon(Icons.Rounded.Schedule) },
+                            onClick = { onNavigate(AppRoute.ScheduledTasks) },
+                        )
+                        ArrowPreference(
                             title = stringResource(R.string.route_github_account),
                             startAction = { SettingsIcon(Icons.Rounded.Code) },
                             onClick = { onNavigate(AppRoute.GitHubAccount) },
                         )
                         ArrowPreference(
-                            title = "角色",
+                            title = stringResource(R.string.conversation_dock_characters),
                             startAction = { SettingsIcon(Icons.Rounded.SportsBar) },
                             onClick = { onNavigate(AppRoute.Characters) },
                         )
@@ -1130,6 +1165,18 @@ private fun SettingsPageContent(
                             title = stringResource(R.string.web_tools_settings_title),
                             startAction = { SettingsIcon(Icons.Rounded.TravelExplore) },
                             onClick = { onNavigate(AppRoute.WebToolsSettings) },
+                        )
+                        val imageGenSettings by remember { ImageGenSettingsRepository.settingsFlow() }
+                            .collectAsState(initial = ImageGenSettings())
+                        ArrowPreference(
+                            title = stringResource(R.string.image_gen_settings_title),
+                            summary = if (imageGenSettings.enabled) {
+                                stringResource(R.string.ui_misc_enabled_with_value, imageGenSettings.backend.shortName())
+                            } else {
+                                stringResource(R.string.ui_misc_not_enabled)
+                            },
+                            startAction = { SettingsIcon(Icons.Rounded.Image) },
+                            onClick = { onNavigate(AppRoute.ImageGenSettings) },
                         )
                         SwitchPref(
                             context = context,
@@ -1515,9 +1562,10 @@ private fun putStringSync(
 ): Boolean =
     runCatching { prefs.edit().putString(key, value).commit() }.getOrDefault(false)
 
-private fun PowerAssistantTarget.displayName(context: Context): String =
+@Composable
+private fun PowerAssistantTarget.displayName(): String =
     when (this) {
-        PowerAssistantTarget.OEM -> context.getString(R.string.power_assistant_system_default)
+        PowerAssistantTarget.OEM -> stringResource(R.string.power_assistant_system_default)
         PowerAssistantTarget.GEMINI -> "Gemini"
         PowerAssistantTarget.ETA -> "Eta"
     }
