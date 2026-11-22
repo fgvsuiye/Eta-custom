@@ -75,6 +75,12 @@ import io.github.mangi.eta.ui.components.coui.CouiTextKind
 import io.github.mangi.eta.ui.components.coui.CouiTopAppBarIconButton
 import io.github.mangi.eta.ui.components.coui.ProvideCouiMaterial
 import io.github.mangi.eta.ui.layout.rememberFloatingBottomBarInsets
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.util.fastCoerceIn
+import androidx.compose.ui.util.fastRoundToInt
+import kotlin.math.roundToInt
+import top.yukonga.miuix.kmp.blur.BlurDefaults
 import io.github.suqi8.coui.kmp.anim.couiSpring
 import io.github.suqi8.coui.kmp.basic.CancelButton
 import top.yukonga.miuix.kmp.basic.Icon
@@ -242,8 +248,8 @@ internal fun ConversationSelectionBar(
 ) {
     val isCoui = LocalUiStyle.current == AppearanceUiStyle.COUI
     val dark = if (isCoui) CouiTheme.isDark else MiuixTheme.colorScheme.surface.luminance() < 0.5f
-    val titleColor = if (isCoui) CouiPageDefaults.themeColors(dark).title else MiuixTheme.colorScheme.onSurface
-    val accentColor = if (isCoui) CouiTheme.colorScheme.accent else MiuixTheme.colorScheme.primary
+    val titleColor = if (isCoui) CouiPageDefaults.themeColors().title else MiuixTheme.colorScheme.onSurface
+    val accentColor = if (isCoui) CouiPageDefaults.themeColors().accent else MiuixTheme.colorScheme.primary
     val destructiveColor = if (isCoui) CouiTheme.colorScheme.error else MiuixTheme.colorScheme.error
     val closeLabel = stringResource(R.string.action_close)
     val deleteLabel = stringResource(R.string.action_delete)
@@ -317,11 +323,10 @@ internal fun ConversationSelectionBar(
     when (LocalUiStyle.current) {
         AppearanceUiStyle.COUI -> {
             if (couiBackdrop != null) {
-                TopAppBarSurface(
-                    modifier = modifier.fillMaxWidth(),
+                CouiFixedTopBar(
                     backdrop = couiBackdrop,
-                    gradientColor = containerColor,
-                    dark = dark,
+                    backgroundColor = containerColor,
+                    modifier = modifier.fillMaxWidth(),
                 ) {
                     barContent()
                 }

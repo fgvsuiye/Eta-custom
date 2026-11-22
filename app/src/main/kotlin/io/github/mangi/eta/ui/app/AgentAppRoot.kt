@@ -1076,11 +1076,6 @@ fun AgentAppRoot(
             val activeMessageDelete = messageDeleteTarget ?: retainedMessageDelete
             val messageDeleteSummary = activeMessageDelete?.let { target ->
                 if (target.laterTurnCount == 0) {
-            var retainedMessageDelete by remember { mutableStateOf<MessageMutationTarget?>(null) }
-            messageDeleteTarget?.let { retainedMessageDelete = it }
-            val activeMessageDelete = messageDeleteTarget ?: retainedMessageDelete
-            val messageDeleteSummary = activeMessageDelete?.let { target ->
-                if (target.laterTurnCount == 0) {
                     stringResource(R.string.conversation_delete_message_body)
                 } else {
                     pluralStringResource(
