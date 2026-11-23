@@ -233,7 +233,7 @@ internal fun ConversationPanePanel(
                             flingBehavior = flingBehavior,
                             overscrollEffect = null,
                         ) {
-                            if (!isSearching && !selectionMode) {
+                            if (!isSearching) {
                                 item(key = "pane_workbench") {
                                     PaneWorkbenchSection(
                                         activeModelLabel = activeModelLabel,
