@@ -61,8 +61,8 @@ jobs:
       - name: 生成更新日志（仅 tag 触发）
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          # 取按创建时间排序中、当前 tag 之前最近的一个 tag 作为更新基线
-          PREV_TAG=$(git tag --sort=-creatordate | awk -v cur="$GITHUB_REF_NAME" '$0==cur{exit} {prev=$0} END{print prev}')
+          # 取按创建时间降序中、当前 tag 的下一位（即上一个 tag）作为更新基线
+          PREV_TAG=$(git tag --sort=-creatordate | awk -v cur="$GITHUB_REF_NAME" '$0==cur{getline; print; exit}')
           {
             echo "CHANGELOG<<EOF"
             if [ -n "$PREV_TAG" ]; then
