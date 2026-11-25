@@ -1204,6 +1204,11 @@ private fun SettingsPageContent(
                             onClick = { onNavigate(AppRoute.ScheduledTasks) },
                         )
                         ArrowPreference(
+                            title = stringResource(R.string.route_github_account),
+                            startAction = { SettingsIcon(Icons.Rounded.Code) },
+                            onClick = { onNavigate(AppRoute.GitHubAccount) },
+                        )
+                        ArrowPreference(
                             title = stringResource(R.string.conversation_dock_characters),
                             startAction = { SettingsIcon(Icons.Rounded.SportsBar) },
                             onClick = { onNavigate(AppRoute.Characters) },
@@ -1447,6 +1452,23 @@ private fun SettingsPageContent(
                                 enabled = prefs != null && !accessibilityProtectionPending,
                             )
                         }
+                    }
+                }
+
+                // ── 提示词与工具 ──────────────────────────────────────────
+                item(key = "section_prompt_studio") {
+                    SmallTitle(stringResource(R.string.prompt_studio_section))
+                    SettingsGroupCard {
+                        ArrowPreference(
+                            title = stringResource(R.string.prompt_studio_title),
+                            summary = stringResource(R.string.prompt_studio_section_summary),
+                            startAction = {
+                                SettingsIcon(
+                                    icon = Icons.Rounded.Psychology,
+                                )
+                            },
+                            onClick = { onNavigate(AppRoute.PromptStudio) },
+                        )
                     }
                 }
 
