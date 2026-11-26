@@ -409,7 +409,7 @@ private fun ToolSearchPage(
                     )
                 }
             }
-            return@MiuixScaffoldPage
+            return@ScaffoldPage
         }
         item(key = "meta") {
             EtaPreferenceGroupTitle(
