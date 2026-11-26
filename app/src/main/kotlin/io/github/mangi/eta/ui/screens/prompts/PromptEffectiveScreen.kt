@@ -72,7 +72,7 @@ internal fun PromptEffectiveScreen(
                     )
                 }
             }
-            return@MiuixScaffoldPage
+            return@ScaffoldPage
         }
         if (pv == null) {
             item(key = "empty") {
@@ -85,7 +85,7 @@ internal fun PromptEffectiveScreen(
                     )
                 }
             }
-            return@MiuixScaffoldPage
+            return@ScaffoldPage
         }
 
         item(key = "summary") {
