@@ -2,6 +2,7 @@ package io.github.mangi.eta.agent.model.provider
 
 import io.github.mangi.eta.agent.runtime.ipc.AgentEvent
 import io.github.mangi.eta.agent.runtime.AgentRunController
+import io.github.mangi.eta.agent.model.AgentRequestSnapshot
 
 /** 重试只包围模型请求；完整响应返回前不提交历史或执行本地工具。 */
 internal class AgentModelRetry(

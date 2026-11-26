@@ -2,6 +2,9 @@ package io.github.mangi.eta.agent.model.provider
 
 import io.github.mangi.eta.R
 import io.github.mangi.eta.agent.prompt.AgentToolPolicyStore
+import io.github.mangi.eta.agent.model.AgentToolDirectory
+import io.github.mangi.eta.agent.model.AgentToolSchemaCompactor
+import io.github.mangi.eta.agent.model.LocalToolProfileStore
 import io.github.mangi.eta.agent.prompt.PromptCustomizationStore
 import io.github.mangi.eta.agent.runtime.ipc.AgentEvent
 import io.github.mangi.eta.agent.runtime.AgentRunController

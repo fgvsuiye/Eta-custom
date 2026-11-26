@@ -41,7 +41,7 @@ import io.github.mangi.eta.ui.components.EtaPreferenceDivider
 import io.github.mangi.eta.ui.components.EtaPreferenceGroup
 import io.github.mangi.eta.ui.components.EtaPreferenceGroupTitle
 import io.github.mangi.eta.ui.components.EtaPreferenceIcon
-import io.github.mangi.eta.ui.components.MiuixScaffoldPage
+import io.github.mangi.eta.ui.components.ScaffoldPage
 import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.Icon
@@ -87,7 +87,7 @@ internal fun PromptSnapshotsScreen(
         }
     }
 
-    MiuixScaffoldPage(
+    ScaffoldPage(
         title = stringResource(R.string.prompt_snapshot_title),
         onBack = onBack,
     ) {

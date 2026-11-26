@@ -47,8 +47,8 @@ import io.github.mangi.eta.ui.components.EtaPreferenceDivider
 import io.github.mangi.eta.ui.components.EtaPreferenceGroup
 import io.github.mangi.eta.ui.components.EtaPreferenceGroupTitle
 import io.github.mangi.eta.ui.components.EtaPreferenceIcon
-import io.github.mangi.eta.ui.components.MiuixScaffold
-import io.github.mangi.eta.ui.components.MiuixScaffoldPage
+import io.github.mangi.eta.ui.components.PageScaffold
+import io.github.mangi.eta.ui.components.ScaffoldPage
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
@@ -144,7 +144,7 @@ private fun ToolDirectoryPage(
     onSearch: () -> Unit,
     onManageGroups: () -> Unit,
 ) {
-    MiuixScaffoldPage(
+    ScaffoldPage(
         title = stringResource(R.string.prompt_studio_tools_title),
         onBack = onBack,
         modifier = Modifier.imePadding(),
@@ -261,7 +261,7 @@ private fun ToolCategoryPager(
 
     val scope = rememberCoroutineScope()
     val page = pagerState.currentPage
-    MiuixScaffold(title = currentLabel, onBack = onExit) { paddingValues, _, sidePadding ->
+    PageScaffold(title = currentLabel, onBack = onExit) { paddingValues, _, sidePadding ->
         Column(modifier = Modifier.fillMaxSize().padding(top = paddingValues.calculateTopPadding())) {
             // 左右滑动的可发现性：两侧箭头 + 页码 + 一行文字提示，避免"不知道能滑"。
             Row(
@@ -382,7 +382,7 @@ private fun ToolSearchPage(
         }
     }
 
-    MiuixScaffoldPage(
+    ScaffoldPage(
         title = stringResource(R.string.prompt_tools_search_title),
         onBack = onExit,
         modifier = Modifier.imePadding(),

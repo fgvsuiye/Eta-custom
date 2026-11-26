@@ -30,7 +30,7 @@ import io.github.mangi.eta.ui.components.EtaPreferenceDivider
 import io.github.mangi.eta.ui.components.EtaPreferenceGroup
 import io.github.mangi.eta.ui.components.EtaPreferenceGroupTitle
 import io.github.mangi.eta.ui.components.EtaPreferenceIcon
-import io.github.mangi.eta.ui.components.MiuixScaffoldPage
+import io.github.mangi.eta.ui.components.ScaffoldPage
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -59,7 +59,7 @@ internal fun PromptVersionsScreen(onBack: () -> Unit) {
         }
     }
 
-    MiuixScaffoldPage(
+    ScaffoldPage(
         title = stringResource(R.string.prompt_studio_versions_title),
         onBack = onBack,
     ) {

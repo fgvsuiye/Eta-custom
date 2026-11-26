@@ -3,6 +3,7 @@ package io.github.mangi.eta.agent.model
 import java.math.BigDecimal
 import org.json.JSONArray
 import org.json.JSONObject
+import io.github.mangi.eta.agent.model.provider.AgentModelClient
 
 /** 在工具执行前校验模型参数；这里只检查调用合同，不承担权限审批或安全策略。 */
 internal class AgentToolCallValidator(tools: JSONArray) {

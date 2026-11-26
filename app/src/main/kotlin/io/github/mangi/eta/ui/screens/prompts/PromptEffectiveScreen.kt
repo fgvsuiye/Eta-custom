@@ -31,7 +31,7 @@ import io.github.mangi.eta.ui.components.EtaPreferenceDivider
 import io.github.mangi.eta.ui.components.EtaPreferenceGroup
 import io.github.mangi.eta.ui.components.EtaPreferenceGroupTitle
 import io.github.mangi.eta.ui.components.EtaPreferenceIcon
-import io.github.mangi.eta.ui.components.MiuixScaffoldPage
+import io.github.mangi.eta.ui.components.ScaffoldPage
 import org.json.JSONArray
 import org.json.JSONObject
 import top.yukonga.miuix.kmp.basic.Text
@@ -57,7 +57,7 @@ internal fun PromptEffectiveScreen(
     val context = LocalContext.current
     val pv = snapshot
 
-    MiuixScaffoldPage(
+    ScaffoldPage(
         title = stringResource(R.string.prompt_effective_title),
         onBack = onBack,
     ) {
@@ -204,7 +204,7 @@ internal fun PromptEffectiveItemScreen(
     val pv = snapshot
 
     if (segment < 0) {
-        MiuixScaffoldPage(
+        ScaffoldPage(
             title = stringResource(R.string.prompt_effective_tools_group),
             onBack = onBack,
         ) {
@@ -240,7 +240,7 @@ internal fun PromptEffectiveItemScreen(
     val segmentJson: JSONObject? = pv?.system?.optJSONObject(segment)
     val content = segmentJson?.optString("text").orEmpty()
     val kind = AgentSnapshotAnalysis.classifySegment(content)
-    MiuixScaffoldPage(
+    ScaffoldPage(
         title = stringResource(R.string.prompt_effective_segment_title, segment + 1, segmentLabel(kind)),
         onBack = onBack,
         compactTitle = true,

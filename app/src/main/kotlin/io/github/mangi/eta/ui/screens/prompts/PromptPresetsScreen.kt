@@ -35,7 +35,7 @@ import io.github.mangi.eta.ui.components.EtaPreferenceGroup
 import io.github.mangi.eta.ui.components.EtaPreferenceColors
 import io.github.mangi.eta.ui.components.EtaPreferenceGroupTitle
 import io.github.mangi.eta.ui.components.EtaPreferenceIcon
-import io.github.mangi.eta.ui.components.MiuixScaffoldPage
+import io.github.mangi.eta.ui.components.ScaffoldPage
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
@@ -116,7 +116,7 @@ internal fun PromptPresetsScreen(
         exportLauncher.launch(exportFileName(preset.name))
     }
 
-    MiuixScaffoldPage(
+    ScaffoldPage(
         title = stringResource(R.string.prompt_preset_title),
         onBack = onBack,
     ) {

@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.github
 import android.content.Context
 import io.github.mangi.eta.agent.device.BoundedRootCommandExecutor
 import io.github.mangi.eta.agent.terminal.LinuxDistribution
-import io.github.mangi.eta.agent.terminal.LinuxEnvironmentPaths
+import io.github.mangi.eta.agent.terminal.linux.LinuxEnvironmentPaths
 import io.github.mangi.eta.core.AndroidAgentLogger
 import java.io.File
 import java.util.Base64

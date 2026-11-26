@@ -1,6 +1,7 @@
 package io.github.mangi.eta.agent.model
 
 import io.github.mangi.eta.agent.prompt.AgentToolPolicy
+import io.github.mangi.eta.agent.model.catalog.AgentToolCatalog
 import io.github.mangi.eta.agent.tool.AgentToolCapabilities
 import org.json.JSONArray
 

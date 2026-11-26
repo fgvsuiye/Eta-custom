@@ -5,6 +5,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.Executors
+import io.github.mangi.eta.agent.model.provider.ProviderRequest
 
 /**
  * 请求快照：把每一轮真正发给模型的请求留一份本地副本。

@@ -23,7 +23,7 @@ import io.github.mangi.eta.ui.components.EtaPreferenceDivider
 import io.github.mangi.eta.ui.components.EtaPreferenceGroup
 import io.github.mangi.eta.ui.components.EtaPreferenceGroupTitle
 import io.github.mangi.eta.ui.components.EtaSwitchPreference
-import io.github.mangi.eta.ui.components.MiuixScaffoldPage
+import io.github.mangi.eta.ui.components.ScaffoldPage
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -37,7 +37,7 @@ internal fun GitHubAccountScreen(onBack: () -> Unit) {
 
     LaunchedEffect(Unit) { GitHubAccountManager.syncIfConfigured() }
 
-    MiuixScaffoldPage(title = "GitHub 账号", onBack = onBack) {
+    ScaffoldPage(title = "GitHub 账号", onBack = onBack) {
         // 首页条目只留标题，能力说明收进这一层。
         item(key = "intro") {
             Text(

@@ -38,7 +38,7 @@ import io.github.mangi.eta.ui.components.EtaPreferenceGroup
 import io.github.mangi.eta.ui.components.EtaPreferenceGroupTitle
 import io.github.mangi.eta.ui.components.EtaPreferenceIcon
 import io.github.mangi.eta.ui.components.EtaSwitchPreference
-import io.github.mangi.eta.ui.components.MiuixScaffoldPage
+import io.github.mangi.eta.ui.components.ScaffoldPage
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -192,7 +192,7 @@ internal fun PromptEditorScreen(
         toast(context, context.getString(R.string.prompt_preset_applied, name, next.version))
     }
 
-    MiuixScaffoldPage(
+    ScaffoldPage(
         title = stringResource(
             when {
                 !presetMode -> R.string.prompt_studio_editor_title

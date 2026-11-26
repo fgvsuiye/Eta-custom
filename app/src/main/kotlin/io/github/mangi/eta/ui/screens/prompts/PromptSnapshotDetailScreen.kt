@@ -33,7 +33,7 @@ import io.github.mangi.eta.ui.components.EtaPreferenceDivider
 import io.github.mangi.eta.ui.components.EtaPreferenceGroup
 import io.github.mangi.eta.ui.components.EtaPreferenceGroupTitle
 import io.github.mangi.eta.ui.components.EtaPreferenceIcon
-import io.github.mangi.eta.ui.components.MiuixScaffoldPage
+import io.github.mangi.eta.ui.components.ScaffoldPage
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.io.File
@@ -80,7 +80,7 @@ internal fun PromptSnapshotDetailScreen(
     }
 
     if (json == null) {
-        MiuixScaffoldPage(title = stringResource(R.string.prompt_snapshot_detail_title), onBack = onBack) {
+        ScaffoldPage(title = stringResource(R.string.prompt_snapshot_detail_title), onBack = onBack) {
             item(key = "missing") {
                 EtaPreferenceGroup(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                     Text(
@@ -99,7 +99,7 @@ internal fun PromptSnapshotDetailScreen(
     val system = json.optJSONArray("system")
     val tools = json.optJSONArray("tools")
 
-    MiuixScaffoldPage(
+    ScaffoldPage(
         title = stringResource(R.string.prompt_snapshot_detail_title),
         onBack = onBack,
     ) {

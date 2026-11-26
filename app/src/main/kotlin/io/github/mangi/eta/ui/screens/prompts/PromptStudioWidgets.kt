@@ -15,7 +15,7 @@ import io.github.mangi.eta.R
 import io.github.mangi.eta.agent.memory.AgentMemoryContext
 import io.github.mangi.eta.agent.model.AgentPromptBuilder
 import io.github.mangi.eta.agent.model.AgentToolCatalog
-import io.github.mangi.eta.agent.model.AgentConversationToolCatalog
+import io.github.mangi.eta.agent.model.catalog.AgentConversationToolCatalog
 import io.github.mangi.eta.agent.model.AgentToolDirectory
 import io.github.mangi.eta.agent.model.LocalToolProfileStore
 import io.github.mangi.eta.agent.prompt.PromptConflict
