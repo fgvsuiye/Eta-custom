@@ -400,7 +400,6 @@ internal object AgentModelClient {
         val vertexProject: String = "",
         val vertexLocation: String = GeminiProviderSetting.DEFAULT_VERTEX_LOCATION,
         val hostedWebSearchEnabled: Boolean = false,
-        val supportsSearchSuggestions: Boolean = false,
         val terminalTools: Boolean = false,
         val browserTools: Boolean = true,
         val deviceDirectTools: Boolean = true,
@@ -420,7 +419,7 @@ internal object AgentModelClient {
             get() = hostedWebSearchEnabled && when (providerType) {
                 ProviderTypes.OPENAI_COMPATIBLE -> openAiEndpointMode == OpenAiEndpointMode.RESPONSES
                 ProviderTypes.GEMINI -> GeminiEndpointMode.normalize(geminiEndpointMode) == GeminiEndpointMode.AI_STUDIO &&
-                    supportsSearchSuggestions && GeminiModelCapabilities.supportsHostedSearch(model)
+                    GeminiModelCapabilities.supportsHostedSearch(model)
                 else -> false
             }
 
